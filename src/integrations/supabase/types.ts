@@ -79,6 +79,50 @@ export type Database = {
           },
         ]
       }
+      ai_chat_history: {
+        Row: {
+          content: string
+          created_at: string
+          farmer_id: string
+          id: string
+          image_url: string | null
+          language: string | null
+          message_type: string | null
+          role: string
+          session_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          farmer_id: string
+          id?: string
+          image_url?: string | null
+          language?: string | null
+          message_type?: string | null
+          role: string
+          session_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          farmer_id?: string
+          id?: string
+          image_url?: string | null
+          language?: string | null
+          message_type?: string | null
+          role?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_chat_history_farmer_id_fkey"
+            columns: ["farmer_id"]
+            isOneToOne: false
+            referencedRelation: "farmer_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crop_photos: {
         Row: {
           capture_stage: Database["public"]["Enums"]["crop_stage"]
@@ -136,6 +180,126 @@ export type Database = {
           },
         ]
       }
+      crop_recommendations: {
+        Row: {
+          created_at: string
+          farmer_id: string
+          id: string
+          input_recommendations: Json | null
+          language: string | null
+          plot_id: string
+          profit_margins: Json | null
+          reasoning: string | null
+          recommended_crops: Json
+          soil_health_score: number | null
+          sustainability_score: number | null
+          yield_forecast: Json | null
+        }
+        Insert: {
+          created_at?: string
+          farmer_id: string
+          id?: string
+          input_recommendations?: Json | null
+          language?: string | null
+          plot_id: string
+          profit_margins?: Json | null
+          reasoning?: string | null
+          recommended_crops: Json
+          soil_health_score?: number | null
+          sustainability_score?: number | null
+          yield_forecast?: Json | null
+        }
+        Update: {
+          created_at?: string
+          farmer_id?: string
+          id?: string
+          input_recommendations?: Json | null
+          language?: string | null
+          plot_id?: string
+          profit_margins?: Json | null
+          reasoning?: string | null
+          recommended_crops?: Json
+          soil_health_score?: number | null
+          sustainability_score?: number | null
+          yield_forecast?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crop_recommendations_farmer_id_fkey"
+            columns: ["farmer_id"]
+            isOneToOne: false
+            referencedRelation: "farmer_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crop_recommendations_plot_id_fkey"
+            columns: ["plot_id"]
+            isOneToOne: false
+            referencedRelation: "plots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      disease_detections: {
+        Row: {
+          analyzed_at: string
+          confidence_score: number | null
+          created_at: string
+          detected_disease: string | null
+          farmer_id: string
+          id: string
+          image_url: string
+          language: string | null
+          plot_id: string | null
+          prevention_tips: string[] | null
+          severity: string | null
+          treatment_recommendations: Json | null
+        }
+        Insert: {
+          analyzed_at?: string
+          confidence_score?: number | null
+          created_at?: string
+          detected_disease?: string | null
+          farmer_id: string
+          id?: string
+          image_url: string
+          language?: string | null
+          plot_id?: string | null
+          prevention_tips?: string[] | null
+          severity?: string | null
+          treatment_recommendations?: Json | null
+        }
+        Update: {
+          analyzed_at?: string
+          confidence_score?: number | null
+          created_at?: string
+          detected_disease?: string | null
+          farmer_id?: string
+          id?: string
+          image_url?: string
+          language?: string | null
+          plot_id?: string | null
+          prevention_tips?: string[] | null
+          severity?: string | null
+          treatment_recommendations?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disease_detections_farmer_id_fkey"
+            columns: ["farmer_id"]
+            isOneToOne: false
+            referencedRelation: "farmer_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disease_detections_plot_id_fkey"
+            columns: ["plot_id"]
+            isOneToOne: false
+            referencedRelation: "plots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       farmer_profiles: {
         Row: {
           avatar_url: string | null
@@ -181,6 +345,48 @@ export type Database = {
           updated_at?: string
           user_id?: string
           village?: string | null
+        }
+        Relationships: []
+      }
+      market_prices: {
+        Row: {
+          created_at: string
+          crop_type: Database["public"]["Enums"]["crop_type"]
+          data_source: string | null
+          demand_level: string | null
+          district: string | null
+          fetched_at: string
+          id: string
+          mandi_name: string | null
+          price_date: string
+          price_per_quintal: number | null
+          state: string
+        }
+        Insert: {
+          created_at?: string
+          crop_type: Database["public"]["Enums"]["crop_type"]
+          data_source?: string | null
+          demand_level?: string | null
+          district?: string | null
+          fetched_at?: string
+          id?: string
+          mandi_name?: string | null
+          price_date: string
+          price_per_quintal?: number | null
+          state: string
+        }
+        Update: {
+          created_at?: string
+          crop_type?: Database["public"]["Enums"]["crop_type"]
+          data_source?: string | null
+          demand_level?: string | null
+          district?: string | null
+          fetched_at?: string
+          id?: string
+          mandi_name?: string | null
+          price_date?: string
+          price_per_quintal?: number | null
+          state?: string
         }
         Relationships: []
       }
@@ -252,6 +458,59 @@ export type Database = {
           },
         ]
       }
+      soil_data: {
+        Row: {
+          created_at: string
+          data_source: string | null
+          fetched_at: string
+          id: string
+          moisture_percentage: number | null
+          nitrogen_level: number | null
+          organic_carbon: number | null
+          ph_level: number | null
+          phosphorus_level: number | null
+          plot_id: string
+          potassium_level: number | null
+          soil_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          data_source?: string | null
+          fetched_at?: string
+          id?: string
+          moisture_percentage?: number | null
+          nitrogen_level?: number | null
+          organic_carbon?: number | null
+          ph_level?: number | null
+          phosphorus_level?: number | null
+          plot_id: string
+          potassium_level?: number | null
+          soil_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          data_source?: string | null
+          fetched_at?: string
+          id?: string
+          moisture_percentage?: number | null
+          nitrogen_level?: number | null
+          organic_carbon?: number | null
+          ph_level?: number | null
+          phosphorus_level?: number | null
+          plot_id?: string
+          potassium_level?: number | null
+          soil_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "soil_data_plot_id_fkey"
+            columns: ["plot_id"]
+            isOneToOne: false
+            referencedRelation: "plots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -272,6 +531,59 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      weather_data: {
+        Row: {
+          created_at: string
+          data_source: string | null
+          fetched_at: string
+          forecast_date: string
+          humidity: number | null
+          id: string
+          latitude: number
+          longitude: number
+          plot_id: string | null
+          rainfall_mm: number | null
+          temperature: number | null
+          wind_speed: number | null
+        }
+        Insert: {
+          created_at?: string
+          data_source?: string | null
+          fetched_at?: string
+          forecast_date: string
+          humidity?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          plot_id?: string | null
+          rainfall_mm?: number | null
+          temperature?: number | null
+          wind_speed?: number | null
+        }
+        Update: {
+          created_at?: string
+          data_source?: string | null
+          fetched_at?: string
+          forecast_date?: string
+          humidity?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          plot_id?: string | null
+          rainfall_mm?: number | null
+          temperature?: number | null
+          wind_speed?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weather_data_plot_id_fkey"
+            columns: ["plot_id"]
+            isOneToOne: false
+            referencedRelation: "plots"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
