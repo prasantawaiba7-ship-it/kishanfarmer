@@ -12,41 +12,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useAuth } from '@/hooks/useAuth';
 import { LanguageSelector } from '@/components/farmer/LanguageSelector';
-import { useLanguage } from '@/hooks/useLanguage';
 
-const signInSchema = z.object({
+const authSchema = z.object({
+  fullName: z.string().min(2, 'Name must be at least 2 characters').max(100).optional().or(z.literal('')),
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
-const signUpSchema = z.object({
-  fullName: z.string().min(2, 'Name must be at least 2 characters').max(100),
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
-
-type SignInFormData = z.infer<typeof signInSchema>;
-type SignUpFormData = z.infer<typeof signUpSchema>;
+type AuthFormData = z.infer<typeof authSchema>;
 
 const Auth = () => {
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp, user } = useAuth();
-  const { t } = useLanguage();
   const navigate = useNavigate();
 
-  const signInForm = useForm<SignInFormData>({
-    resolver: zodResolver(signInSchema),
-    defaultValues: { email: '', password: '' },
-  });
-
-  const signUpForm = useForm<SignUpFormData>({
-    resolver: zodResolver(signUpSchema),
-    defaultValues: { fullName: '', email: '', password: '', confirmPassword: '' },
+  const form = useForm<AuthFormData>({
+    resolver: zodResolver(authSchema),
+    defaultValues: { fullName: '', email: '', password: '' },
   });
 
   useEffect(() => {
@@ -55,30 +38,32 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
-  const handleSignIn = async (data: SignInFormData) => {
+  const handleSubmit = async (data: AuthFormData) => {
     setIsLoading(true);
-    const { error } = await signIn(data.email, data.password);
-    setIsLoading(false);
-
-    if (error) {
-      signInForm.setError('root', { 
-        message: error.message === 'Invalid login credentials' 
-          ? 'Invalid email or password. Please try again.'
-          : error.message 
-      });
-    }
-  };
-
-  const handleSignUp = async (data: SignUpFormData) => {
-    setIsLoading(true);
-    const { error } = await signUp(data.email, data.password, data.fullName);
-    setIsLoading(false);
-
-    if (error) {
-      if (error.message.includes('already registered')) {
-        signUpForm.setError('email', { message: 'This email is already registered. Please sign in.' });
-      } else {
-        signUpForm.setError('root', { message: error.message });
+    
+    if (isNewUser) {
+      // Sign up flow
+      const { error } = await signUp(data.email, data.password, data.fullName || 'Farmer');
+      setIsLoading(false);
+      
+      if (error) {
+        if (error.message.includes('already registered')) {
+          form.setError('email', { message: 'This email is already registered. Uncheck "New User" to sign in.' });
+        } else {
+          form.setError('root', { message: error.message });
+        }
+      }
+    } else {
+      // Sign in flow
+      const { error } = await signIn(data.email, data.password);
+      setIsLoading(false);
+      
+      if (error) {
+        if (error.message === 'Invalid login credentials') {
+          form.setError('root', { message: 'Invalid email or password. Check "New User" if you need to create an account.' });
+        } else {
+          form.setError('root', { message: error.message });
+        }
       }
     }
   };
@@ -86,7 +71,7 @@ const Auth = () => {
   return (
     <>
       <Helmet>
-        <title>{isSignUp ? 'Sign Up' : 'Sign In'} - CROPIC</title>
+        <title>Login - CROPIC</title>
         <meta name="description" content="Sign in to CROPIC to manage your crop monitoring and access AI-powered farming insights." />
       </Helmet>
 
@@ -101,8 +86,8 @@ const Auth = () => {
           className="w-full max-w-[95%] sm:max-w-md"
         >
           <div className="text-center mb-6 sm:mb-8">
-            <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-primary mb-3 sm:mb-4">
-              <Leaf className="w-6 h-6 sm:w-8 sm:h-8 text-primary-foreground" />
+            <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-primary mb-3 sm:mb-4">
+              <Leaf className="w-7 h-7 sm:w-8 sm:h-8 text-primary-foreground" />
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground">CROPIC</h1>
             <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-base">AI-Powered Crop Monitoring</p>
@@ -110,168 +95,107 @@ const Auth = () => {
 
           <Card className="border-border/50 shadow-xl">
             <CardHeader className="text-center px-4 sm:px-6 py-4 sm:py-6">
-              <CardTitle className="text-lg sm:text-xl">{isSignUp ? 'Create Account' : 'Welcome Back'}</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">Farmer Login</CardTitle>
               <CardDescription className="text-sm">
-                {isSignUp 
-                  ? 'Start monitoring your crops with AI assistance' 
-                  : 'Sign in to access your farm dashboard'}
+                Enter your details to access your dashboard
               </CardDescription>
             </CardHeader>
 
             <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-              {isSignUp ? (
-                <Form {...signUpForm}>
-                  <form onSubmit={signUpForm.handleSubmit(handleSignUp)} className="space-y-3 sm:space-y-4">
-                    <FormField
-                      control={signUpForm.control}
-                      name="fullName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm">Full Name</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input placeholder="Enter your full name" className="pl-10 h-10 sm:h-11 text-sm sm:text-base" {...field} />
-                            </div>
-                          </FormControl>
-                          <FormMessage className="text-xs" />
-                        </FormItem>
-                      )}
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                  {/* New User Checkbox */}
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+                    <input
+                      type="checkbox"
+                      id="newUser"
+                      checked={isNewUser}
+                      onChange={(e) => setIsNewUser(e.target.checked)}
+                      className="w-5 h-5 rounded border-input accent-primary cursor-pointer"
                     />
+                    <label htmlFor="newUser" className="text-sm font-medium cursor-pointer flex-1">
+                      I am a new user (create account)
+                    </label>
+                  </div>
 
-                    <FormField
-                      control={signUpForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm">Email</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input type="email" placeholder="Enter your email" className="pl-10 h-10 sm:h-11 text-sm sm:text-base" {...field} />
-                            </div>
-                          </FormControl>
-                          <FormMessage className="text-xs" />
-                        </FormItem>
-                      )}
-                    />
+                  {/* Full Name - only for new users */}
+                  {isNewUser && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                    >
+                      <FormField
+                        control={form.control}
+                        name="fullName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm">Full Name</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input placeholder="Enter your full name" className="pl-10 h-11 text-base" {...field} />
+                              </div>
+                            </FormControl>
+                            <FormMessage className="text-xs" />
+                          </FormItem>
+                        )}
+                      />
+                    </motion.div>
+                  )}
 
-                    <FormField
-                      control={signUpForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm">Password</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input type="password" placeholder="Create a password" className="pl-10 h-10 sm:h-11 text-sm sm:text-base" {...field} />
-                            </div>
-                          </FormControl>
-                          <FormMessage className="text-xs" />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={signUpForm.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm">Confirm Password</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input type="password" placeholder="Confirm your password" className="pl-10 h-10 sm:h-11 text-sm sm:text-base" {...field} />
-                            </div>
-                          </FormControl>
-                          <FormMessage className="text-xs" />
-                        </FormItem>
-                      )}
-                    />
-
-                    {signUpForm.formState.errors.root && (
-                      <p className="text-xs sm:text-sm text-destructive">{signUpForm.formState.errors.root.message}</p>
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm">Email</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input type="email" placeholder="Enter your email" className="pl-10 h-11 text-base" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
                     )}
+                  />
 
-                    <Button type="submit" className="w-full h-10 sm:h-11 text-sm sm:text-base" disabled={isLoading}>
-                      {isLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <>
-                          Create Account
-                          <ArrowRight className="w-4 h-4 ml-2" />
-                        </>
-                      )}
-                    </Button>
-                  </form>
-                </Form>
-              ) : (
-                <Form {...signInForm}>
-                  <form onSubmit={signInForm.handleSubmit(handleSignIn)} className="space-y-3 sm:space-y-4">
-                    <FormField
-                      control={signInForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm">Email</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input type="email" placeholder="Enter your email" className="pl-10 h-10 sm:h-11 text-sm sm:text-base" {...field} />
-                            </div>
-                          </FormControl>
-                          <FormMessage className="text-xs" />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={signInForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm">Password</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input type="password" placeholder="Enter your password" className="pl-10 h-10 sm:h-11 text-sm sm:text-base" {...field} />
-                            </div>
-                          </FormControl>
-                          <FormMessage className="text-xs" />
-                        </FormItem>
-                      )}
-                    />
-
-                    {signInForm.formState.errors.root && (
-                      <p className="text-xs sm:text-sm text-destructive">{signInForm.formState.errors.root.message}</p>
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm">Password</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input type="password" placeholder="Enter your password" className="pl-10 h-11 text-base" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
                     )}
+                  />
 
-                    <Button type="submit" className="w-full h-10 sm:h-11 text-sm sm:text-base" disabled={isLoading}>
-                      {isLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <>
-                          Sign In
-                          <ArrowRight className="w-4 h-4 ml-2" />
-                        </>
-                      )}
-                    </Button>
-                  </form>
-                </Form>
-              )}
+                  {form.formState.errors.root && (
+                    <p className="text-xs sm:text-sm text-destructive bg-destructive/10 p-3 rounded-lg">
+                      {form.formState.errors.root.message}
+                    </p>
+                  )}
 
-              <div className="mt-4 sm:mt-6 text-center">
-                <button
-                  type="button"
-                  onClick={() => setIsSignUp(!isSignUp)}
-                  className="text-xs sm:text-sm text-primary hover:underline touch-manipulation py-2"
-                >
-                  {isSignUp 
-                    ? 'Already have an account? Sign in' 
-                    : "Don't have an account? Sign up"}
-                </button>
-              </div>
+                  <Button type="submit" className="w-full h-12 text-base font-medium" disabled={isLoading}>
+                    {isLoading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <>
+                        {isNewUser ? 'Create Account & Login' : 'Login to Dashboard'}
+                        <ArrowRight className="w-5 h-5 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </Form>
             </CardContent>
           </Card>
 
