@@ -13,6 +13,7 @@ interface FarmerProfile {
   state: string | null;
   pmfby_enrollment_id: string | null;
   preferred_language: string | null;
+  avatar_url: string | null;
 }
 
 interface AuthContextType {

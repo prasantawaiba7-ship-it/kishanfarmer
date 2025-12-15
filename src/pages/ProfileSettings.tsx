@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, User, Phone, MapPin, Building, Flag, Loader2, Save } from 'lucide-react';
+import { ArrowLeft, User, Phone, MapPin, Building, Flag, Loader2, Save, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import { LanguageSelector } from '@/components/farmer/LanguageSelector';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const profileSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters').max(100),
@@ -34,8 +36,12 @@ const indianStates = [
 
 const ProfileSettings = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { user, profile, isLoading: authLoading, updateProfile } = useAuth();
   const { t } = useLanguage();
+  const { toast } = useToast();
   const navigate = useNavigate();
 
   const form = useForm<ProfileFormData>({
@@ -64,8 +70,74 @@ const ProfileSettings = () => {
         district: profile.district || '',
         state: profile.state || '',
       });
+      setAvatarUrl(profile.avatar_url);
     }
   }, [profile, form]);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Invalid file',
+        description: 'Please select an image file',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: 'File too large',
+        description: 'Please select an image under 2MB',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/avatar.${fileExt}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      // Update profile with new avatar URL
+      await updateProfile({ avatar_url: publicUrl });
+      setAvatarUrl(publicUrl);
+
+      toast({
+        title: 'Photo updated',
+        description: 'Your profile photo has been updated successfully.',
+      });
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      toast({
+        title: 'Upload failed',
+        description: 'Failed to upload photo. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploadingAvatar(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   const handleSubmit = async (data: ProfileFormData) => {
     setIsLoading(true);
@@ -127,9 +199,41 @@ const ProfileSettings = () => {
           >
             <Card className="border-border/50 shadow-xl">
               <CardHeader className="text-center px-4 sm:px-6 py-4 sm:py-6">
-                <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/10 flex items-center justify-center mb-3 sm:mb-4">
-                  <User className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
+                {/* Avatar Upload */}
+                <div className="relative mx-auto mb-3 sm:mb-4">
+                  <div 
+                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden cursor-pointer group"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {avatarUrl ? (
+                      <img 
+                        src={avatarUrl} 
+                        alt="Profile" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-10 h-10 sm:w-12 sm:h-12 text-primary" />
+                    )}
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                      {isUploadingAvatar ? (
+                        <Loader2 className="w-6 h-6 text-white animate-spin" />
+                      ) : (
+                        <Camera className="w-6 h-6 text-white" />
+                      )}
+                    </div>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Tap to change photo
+                  </p>
                 </div>
+
                 <CardTitle className="text-xl sm:text-2xl">Profile Settings</CardTitle>
                 <CardDescription className="text-sm">
                   Update your personal information and farm location
