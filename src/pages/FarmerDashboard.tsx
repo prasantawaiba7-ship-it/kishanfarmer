@@ -177,24 +177,36 @@ const FarmerDashboard = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+              className="mb-6 sm:mb-8"
             >
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1 flex items-center gap-2">
-                  <span>🙏</span> {t('home')}, {profile?.full_name || 'Farmer'}
-                </h1>
-                <p className="text-muted-foreground text-sm sm:text-base">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                      <User className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
+                    </div>
+                    <div className="min-w-0">
+                      <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">
+                        🙏 {t('home')}, {profile?.full_name || 'Farmer'}
+                      </h1>
+                      <p className="text-muted-foreground text-xs sm:text-sm truncate">
+                        {user?.email}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <LanguageSelector />
+                    <Button variant="outline" size="sm" onClick={signOut} className="flex-1 sm:flex-initial">
+                      <LogOut className="w-4 h-4" />
+                      <span className="ml-2 sm:hidden md:inline">Sign Out</span>
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-muted-foreground text-xs sm:text-sm">
                   {profile?.village && `${profile.village}, `}
                   {profile?.district && `${profile.district}, `}
                   {profile?.state || 'India'}
                 </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <LanguageSelector />
-                <Button variant="outline" size="sm" onClick={signOut}>
-                  <LogOut className="w-4 h-4" />
-                  <span className="hidden sm:inline ml-2">Sign Out</span>
-                </Button>
               </div>
             </motion.div>
 

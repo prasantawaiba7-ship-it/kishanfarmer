@@ -90,51 +90,51 @@ const Auth = () => {
         <meta name="description" content="Sign in to CROPIC to manage your crop monitoring and access AI-powered farming insights." />
       </Helmet>
 
-      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
-        <div className="absolute top-4 right-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-3 sm:p-4">
+        <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
           <LanguageSelector />
         </div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-md"
+          className="w-full max-w-[95%] sm:max-w-md"
         >
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary mb-4">
-              <Leaf className="w-8 h-8 text-primary-foreground" />
+          <div className="text-center mb-6 sm:mb-8">
+            <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-primary mb-3 sm:mb-4">
+              <Leaf className="w-6 h-6 sm:w-8 sm:h-8 text-primary-foreground" />
             </div>
-            <h1 className="text-3xl font-bold text-foreground">CROPIC</h1>
-            <p className="text-muted-foreground mt-2">AI-Powered Crop Monitoring</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">CROPIC</h1>
+            <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-base">AI-Powered Crop Monitoring</p>
           </div>
 
           <Card className="border-border/50 shadow-xl">
-            <CardHeader className="text-center">
-              <CardTitle>{isSignUp ? 'Create Account' : 'Welcome Back'}</CardTitle>
-              <CardDescription>
+            <CardHeader className="text-center px-4 sm:px-6 py-4 sm:py-6">
+              <CardTitle className="text-lg sm:text-xl">{isSignUp ? 'Create Account' : 'Welcome Back'}</CardTitle>
+              <CardDescription className="text-sm">
                 {isSignUp 
                   ? 'Start monitoring your crops with AI assistance' 
                   : 'Sign in to access your farm dashboard'}
               </CardDescription>
             </CardHeader>
 
-            <CardContent>
+            <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
               {isSignUp ? (
                 <Form {...signUpForm}>
-                  <form onSubmit={signUpForm.handleSubmit(handleSignUp)} className="space-y-4">
+                  <form onSubmit={signUpForm.handleSubmit(handleSignUp)} className="space-y-3 sm:space-y-4">
                     <FormField
                       control={signUpForm.control}
                       name="fullName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Full Name</FormLabel>
+                          <FormLabel className="text-sm">Full Name</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                              <Input placeholder="Enter your full name" className="pl-10" {...field} />
+                              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input placeholder="Enter your full name" className="pl-10 h-10 sm:h-11 text-sm sm:text-base" {...field} />
                             </div>
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-xs" />
                         </FormItem>
                       )}
                     />
@@ -144,14 +144,14 @@ const Auth = () => {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel className="text-sm">Email</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                              <Input type="email" placeholder="Enter your email" className="pl-10" {...field} />
+                              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input type="email" placeholder="Enter your email" className="pl-10 h-10 sm:h-11 text-sm sm:text-base" {...field} />
                             </div>
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-xs" />
                         </FormItem>
                       )}
                     />
@@ -161,14 +161,14 @@ const Auth = () => {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel className="text-sm">Password</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                              <Input type="password" placeholder="Create a password" className="pl-10" {...field} />
+                              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input type="password" placeholder="Create a password" className="pl-10 h-10 sm:h-11 text-sm sm:text-base" {...field} />
                             </div>
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-xs" />
                         </FormItem>
                       )}
                     />
@@ -178,23 +178,23 @@ const Auth = () => {
                       name="confirmPassword"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Confirm Password</FormLabel>
+                          <FormLabel className="text-sm">Confirm Password</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                              <Input type="password" placeholder="Confirm your password" className="pl-10" {...field} />
+                              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input type="password" placeholder="Confirm your password" className="pl-10 h-10 sm:h-11 text-sm sm:text-base" {...field} />
                             </div>
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-xs" />
                         </FormItem>
                       )}
                     />
 
                     {signUpForm.formState.errors.root && (
-                      <p className="text-sm text-destructive">{signUpForm.formState.errors.root.message}</p>
+                      <p className="text-xs sm:text-sm text-destructive">{signUpForm.formState.errors.root.message}</p>
                     )}
 
-                    <Button type="submit" className="w-full" disabled={isLoading}>
+                    <Button type="submit" className="w-full h-10 sm:h-11 text-sm sm:text-base" disabled={isLoading}>
                       {isLoading ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
@@ -208,20 +208,20 @@ const Auth = () => {
                 </Form>
               ) : (
                 <Form {...signInForm}>
-                  <form onSubmit={signInForm.handleSubmit(handleSignIn)} className="space-y-4">
+                  <form onSubmit={signInForm.handleSubmit(handleSignIn)} className="space-y-3 sm:space-y-4">
                     <FormField
                       control={signInForm.control}
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel className="text-sm">Email</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                              <Input type="email" placeholder="Enter your email" className="pl-10" {...field} />
+                              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input type="email" placeholder="Enter your email" className="pl-10 h-10 sm:h-11 text-sm sm:text-base" {...field} />
                             </div>
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-xs" />
                         </FormItem>
                       )}
                     />
@@ -231,23 +231,23 @@ const Auth = () => {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel className="text-sm">Password</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                              <Input type="password" placeholder="Enter your password" className="pl-10" {...field} />
+                              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input type="password" placeholder="Enter your password" className="pl-10 h-10 sm:h-11 text-sm sm:text-base" {...field} />
                             </div>
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-xs" />
                         </FormItem>
                       )}
                     />
 
                     {signInForm.formState.errors.root && (
-                      <p className="text-sm text-destructive">{signInForm.formState.errors.root.message}</p>
+                      <p className="text-xs sm:text-sm text-destructive">{signInForm.formState.errors.root.message}</p>
                     )}
 
-                    <Button type="submit" className="w-full" disabled={isLoading}>
+                    <Button type="submit" className="w-full h-10 sm:h-11 text-sm sm:text-base" disabled={isLoading}>
                       {isLoading ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
@@ -261,11 +261,11 @@ const Auth = () => {
                 </Form>
               )}
 
-              <div className="mt-6 text-center">
+              <div className="mt-4 sm:mt-6 text-center">
                 <button
                   type="button"
                   onClick={() => setIsSignUp(!isSignUp)}
-                  className="text-sm text-primary hover:underline"
+                  className="text-xs sm:text-sm text-primary hover:underline touch-manipulation py-2"
                 >
                   {isSignUp 
                     ? 'Already have an account? Sign in' 
@@ -275,7 +275,7 @@ const Auth = () => {
             </CardContent>
           </Card>
 
-          <p className="text-center text-xs text-muted-foreground mt-6">
+          <p className="text-center text-[10px] sm:text-xs text-muted-foreground mt-4 sm:mt-6 px-4">
             By continuing, you agree to CROPIC's Terms of Service and Privacy Policy
           </p>
         </motion.div>
