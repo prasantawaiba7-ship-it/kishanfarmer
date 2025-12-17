@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Mic, MicOff, Image, X, Loader2, Bot, User, Leaf, Bug, WifiOff, Wifi, CloudOff, Trash2 } from 'lucide-react';
+import { Send, Mic, MicOff, Image, X, Loader2, Bot, User, Leaf, Bug, WifiOff, Wifi, CloudOff, Trash2, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { usePlots } from '@/hooks/useFarmerData';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
+import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 import { offlineStorage } from '@/lib/offlineStorage';
 
 interface Message {
@@ -56,6 +57,24 @@ export function AIAssistant({ initialAction = null }: AIAssistantProps) {
     onError: (error) => {
       toast({
         title: "Voice Error",
+        description: error,
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Text-to-speech hook
+  const {
+    toggle: toggleSpeech,
+    stop: stopSpeech,
+    isSpeaking,
+    isSupported: isTTSSupported,
+    currentMessageId: speakingMessageId
+  } = useTextToSpeech({
+    language,
+    onError: (error) => {
+      toast({
+        title: "Speech Error",
         description: error,
         variant: "destructive"
       });
@@ -711,6 +730,7 @@ I've saved your crop image. I'll analyze it when you're back online.
   };
 
   const clearChat = () => {
+    stopSpeech(); // Stop any playing speech
     setMessages([]);
     offlineStorage.clearConversations();
     toast({
@@ -861,6 +881,33 @@ I've saved your crop image. I'll analyze it when you're back online.
                     <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                     <span className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                )}
+                {/* Text-to-Speech button for assistant messages */}
+                {message.role === 'assistant' && message.content && isTTSSupported && (
+                  <div className="mt-2 pt-2 border-t border-border/50">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={`h-7 px-2 gap-1.5 text-xs ${
+                        speakingMessageId === message.id 
+                          ? 'text-primary bg-primary/10' 
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                      onClick={() => toggleSpeech(message.content, message.id)}
+                    >
+                      {speakingMessageId === message.id ? (
+                        <>
+                          <VolumeX className="w-3.5 h-3.5" />
+                          Stop
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="w-3.5 h-3.5" />
+                          Listen
+                        </>
+                      )}
+                    </Button>
                   </div>
                 )}
               </Card>
