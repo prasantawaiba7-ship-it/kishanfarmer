@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Mic, MicOff, Image, X, Loader2, Bot, User, Sparkles, Leaf, Bug, WifiOff, Wifi, CloudOff, Trash2 } from 'lucide-react';
+import { Send, Mic, MicOff, Image, X, Loader2, Bot, User, Leaf, Bug, WifiOff, Wifi, CloudOff, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/hooks/useLanguage';
 import { usePlots } from '@/hooks/useFarmerData';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { offlineStorage } from '@/lib/offlineStorage';
 
 interface Message {
@@ -28,7 +29,6 @@ export function AIAssistant({ initialAction = null }: AIAssistantProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzingDisease, setIsAnalyzingDisease] = useState(false);
   const [isGettingRecommendations, setIsGettingRecommendations] = useState(false);
@@ -40,6 +40,34 @@ export function AIAssistant({ initialAction = null }: AIAssistantProps) {
   const { t, language } = useLanguage();
   const { data: plots } = usePlots();
   const { isOnline, wasOffline } = useNetworkStatus();
+
+  // Voice input hook
+  const { 
+    isListening, 
+    isSupported: isVoiceSupported, 
+    transcript, 
+    startListening, 
+    stopListening 
+  } = useVoiceInput({
+    language,
+    onResult: (text) => {
+      setInput(prev => prev ? `${prev} ${text}` : text);
+    },
+    onError: (error) => {
+      toast({
+        title: "Voice Error",
+        description: error,
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Update input with interim transcript while listening
+  useEffect(() => {
+    if (isListening && transcript) {
+      setInput(transcript);
+    }
+  }, [transcript, isListening]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -658,11 +686,28 @@ I've saved your crop image. I'll analyze it when you're back online.
   };
 
   const toggleRecording = () => {
-    setIsRecording(!isRecording);
-    toast({
-      title: isRecording ? "Recording stopped" : "Recording started",
-      description: isRecording ? "Processing your voice..." : "Speak now..."
-    });
+    if (!isVoiceSupported) {
+      toast({
+        title: "Voice not supported",
+        description: "Your browser doesn't support voice input. Try Chrome or Edge.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (isListening) {
+      stopListening();
+      toast({
+        title: "Voice stopped",
+        description: "Processing your message...",
+      });
+    } else {
+      startListening();
+      toast({
+        title: "Listening...",
+        description: "Speak now in your language",
+      });
+    }
   };
 
   const clearChat = () => {
@@ -920,13 +965,17 @@ I've saved your crop image. I'll analyze it when you're back online.
             <Image className="w-4 h-4" />
           </Button>
           <Button
-            variant={isRecording ? "destructive" : "outline"}
+            variant={isListening ? "destructive" : "outline"}
             size="icon"
             onClick={toggleRecording}
-            className="flex-shrink-0"
+            className={`flex-shrink-0 relative ${isListening ? 'animate-pulse' : ''}`}
             disabled={isProcessing}
+            title={isVoiceSupported ? (isListening ? "Stop listening" : "Start voice input") : "Voice not supported"}
           >
-            {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            {isListening && (
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-destructive rounded-full animate-ping" />
+            )}
           </Button>
           <Textarea
             value={input}
