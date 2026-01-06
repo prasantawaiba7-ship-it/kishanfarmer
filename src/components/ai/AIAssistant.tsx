@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Mic, MicOff, Image, X, Loader2, Bot, User, Leaf, Bug, WifiOff, Wifi, CloudOff, Trash2, Volume2, VolumeX } from 'lucide-react';
+import { Send, Mic, MicOff, Image, X, Loader2, Bot, User, Leaf, Bug, WifiOff, Wifi, CloudOff, Trash2, Volume2, VolumeX, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/hooks/useLanguage';
 import { usePlots } from '@/hooks/useFarmerData';
@@ -11,6 +12,7 @@ import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 import { offlineStorage } from '@/lib/offlineStorage';
+import { VoiceChatButton } from './VoiceChatButton';
 
 interface Message {
   id: string;
@@ -34,6 +36,12 @@ export function AIAssistant({ initialAction = null }: AIAssistantProps) {
   const [isAnalyzingDisease, setIsAnalyzingDisease] = useState(false);
   const [isGettingRecommendations, setIsGettingRecommendations] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [autoPlayTTS, setAutoPlayTTS] = useState(() => {
+    const saved = localStorage.getItem('krishi-mitra-autoplay-tts');
+    return saved === 'true';
+  });
+  const [showSettings, setShowSettings] = useState(false);
+  const lastAssistantMessageIdRef = useRef<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const diseaseInputRef = useRef<HTMLInputElement>(null);
@@ -65,6 +73,7 @@ export function AIAssistant({ initialAction = null }: AIAssistantProps) {
 
   // Text-to-speech hook
   const {
+    speak,
     toggle: toggleSpeech,
     stop: stopSpeech,
     isSpeaking,
@@ -80,6 +89,11 @@ export function AIAssistant({ initialAction = null }: AIAssistantProps) {
       });
     }
   });
+
+  // Save auto-play preference
+  useEffect(() => {
+    localStorage.setItem('krishi-mitra-autoplay-tts', autoPlayTTS.toString());
+  }, [autoPlayTTS]);
 
   // Update input with interim transcript while listening
   useEffect(() => {
@@ -112,6 +126,36 @@ export function AIAssistant({ initialAction = null }: AIAssistantProps) {
       offlineStorage.saveConversations(messages);
     }
   }, [messages]);
+
+  // Auto-play TTS when assistant message streaming completes
+  useEffect(() => {
+    if (!autoPlayTTS || !isTTSSupported) return;
+    
+    const lastMessage = messages[messages.length - 1];
+    if (
+      lastMessage?.role === 'assistant' && 
+      lastMessage.content && 
+      !isLoading && 
+      !isAnalyzingDisease && 
+      !isGettingRecommendations &&
+      lastMessage.id !== lastAssistantMessageIdRef.current
+    ) {
+      // New completed assistant message - auto-play it
+      lastAssistantMessageIdRef.current = lastMessage.id;
+      speak(lastMessage.content, lastMessage.id);
+    }
+  }, [messages, autoPlayTTS, isTTSSupported, isLoading, isAnalyzingDisease, isGettingRecommendations, speak]);
+
+  // Handle realtime voice chat messages
+  const handleRealtimeMessage = useCallback((msg: { role: 'user' | 'assistant'; content: string }) => {
+    const newMessage: Message = {
+      id: crypto.randomUUID(),
+      role: msg.role,
+      content: msg.content,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, newMessage]);
+  }, []);
 
   // Process pending messages when back online
   useEffect(() => {
@@ -840,6 +884,25 @@ I've saved your crop image. I'll analyze it when you're back online.
               </Button>
             </div>
 
+            {/* Voice Chat & Settings for empty state */}
+            <div className="flex items-center justify-center gap-3 mb-4">
+              {isOnline && (
+                <VoiceChatButton onMessage={handleRealtimeMessage} />
+              )}
+              <div className="flex items-center gap-2 text-xs">
+                <Volume2 className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-muted-foreground">
+                  {language === 'ne' ? 'स्वत: आवाज' : 'Auto-play'}
+                </span>
+                <Switch
+                  checked={autoPlayTTS}
+                  onCheckedChange={setAutoPlayTTS}
+                  disabled={!isTTSSupported}
+                  className="scale-75"
+                />
+              </div>
+            </div>
+
             <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-center">
               {[
                 language === 'ne' ? 'मेरो बालीमा पहेंलो पात देखियो' : 'मेरी फसल में पीलापन है', 
@@ -1006,6 +1069,22 @@ I've saved your crop image. I'll analyze it when you're back online.
               <Bug className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               {language === 'ne' ? 'रोग जाँच' : 'Scan Disease'}
             </Button>
+            
+            {/* Voice Chat Button for OpenAI Realtime */}
+            {isOnline && (
+              <VoiceChatButton onMessage={handleRealtimeMessage} />
+            )}
+            
+            {/* Settings Toggle */}
+            <Button
+              variant="outline"
+              size="sm"
+              className={`flex-shrink-0 gap-1 sm:gap-1.5 h-7 sm:h-8 text-[10px] sm:text-xs px-2 sm:px-3 ${showSettings ? 'bg-primary/10' : ''}`}
+              onClick={() => setShowSettings(!showSettings)}
+            >
+              <Settings className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            </Button>
+            
             <Button
               variant="outline"
               size="sm"
@@ -1017,6 +1096,37 @@ I've saved your crop image. I'll analyze it when you're back online.
             </Button>
           </div>
         )}
+        
+        {/* Settings Panel */}
+        <AnimatePresence>
+          {showSettings && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-2 sm:mb-3 p-2 sm:p-3 bg-muted/50 rounded-lg border border-border overflow-hidden"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Volume2 className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-xs sm:text-sm">
+                    {language === 'ne' ? 'स्वत: आवाज प्लेब्याक' : 'Auto-play voice'}
+                  </span>
+                </div>
+                <Switch
+                  checked={autoPlayTTS}
+                  onCheckedChange={setAutoPlayTTS}
+                  disabled={!isTTSSupported}
+                />
+              </div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
+                {language === 'ne' 
+                  ? 'AI को जवाफ स्वचालित रूपमा बोलिनेछ'
+                  : 'AI responses will be read aloud automatically'}
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
         
         <div className="flex gap-1.5 sm:gap-2 items-end">
           <input
