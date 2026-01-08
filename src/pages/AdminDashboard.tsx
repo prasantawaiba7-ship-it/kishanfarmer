@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,13 +7,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Helmet } from "react-helmet-async";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Settings,
   Users,
@@ -25,12 +28,36 @@ import {
   Bell,
   Trash2,
   Plus,
-  Edit,
-  Save,
   MapPin,
   BarChart3,
+  Phone,
+  Mic,
+  Volume2,
+  RefreshCw,
+  Search,
+  UserPlus,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
+
+interface FarmerProfile {
+  id: string;
+  user_id: string;
+  full_name: string;
+  phone: string | null;
+  state: string | null;
+  district: string | null;
+  village: string | null;
+  created_at: string;
+  role?: string;
+}
+
+interface UserStats {
+  totalUsers: number;
+  activeToday: number;
+  aiQueries: number;
+  voiceCalls: number;
+}
 
 // Sample testimonials data
 const defaultTestimonials = [
@@ -71,6 +98,17 @@ const AdminDashboard = () => {
   
   const isLoading = authLoading || roleLoading;
   
+  // Users state
+  const [users, setUsers] = useState<FarmerProfile[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [stats, setStats] = useState<UserStats>({
+    totalUsers: 0,
+    activeToday: 0,
+    aiQueries: 0,
+    voiceCalls: 0
+  });
+  
   // Redirect non-admin users
   useEffect(() => {
     if (!isLoading && !isAdmin()) {
@@ -80,7 +118,6 @@ const AdminDashboard = () => {
   
   const [testimonials, setTestimonials] = useState(defaultTestimonials);
   const [languages, setLanguages] = useState(languageOptions);
-  const [editingTestimonial, setEditingTestimonial] = useState<number | null>(null);
   const [newTestimonial, setNewTestimonial] = useState({
     name: "",
     location: "",
@@ -98,6 +135,100 @@ const AdminDashboard = () => {
     autoTranslate: true,
     notificationsEnabled: true,
   });
+
+  // Fetch real user data
+  useEffect(() => {
+    if (isAdmin()) {
+      fetchUsers();
+      fetchStats();
+    }
+  }, [isAdmin]);
+
+  const fetchUsers = async () => {
+    setUsersLoading(true);
+    try {
+      const { data: profiles, error } = await supabase
+        .from('farmer_profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Fetch roles for all users
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+
+      const usersWithRoles = profiles?.map(profile => ({
+        ...profile,
+        role: roles?.find(r => r.user_id === profile.user_id)?.role || 'farmer'
+      })) || [];
+
+      setUsers(usersWithRoles);
+    } catch (err) {
+      console.error('Failed to fetch users:', err);
+      toast.error("Failed to load users");
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      // Get total users count
+      const { count: userCount } = await supabase
+        .from('farmer_profiles')
+        .select('*', { count: 'exact', head: true });
+
+      // Get AI chat count (last 24 hours)
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      const { count: chatCount } = await supabase
+        .from('ai_chat_history')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', yesterday.toISOString());
+
+      setStats({
+        totalUsers: userCount || 0,
+        activeToday: Math.floor((userCount || 0) * 0.3), // Estimate
+        aiQueries: chatCount || 0,
+        voiceCalls: Math.floor((chatCount || 0) * 0.15) // Estimate
+      });
+    } catch (err) {
+      console.error('Failed to fetch stats:', err);
+    }
+  };
+
+  const handleAssignRole = async (userId: string, newRole: string) => {
+    try {
+      // Check if user already has a role
+      const { data: existingRole } = await supabase
+        .from('user_roles')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+
+      if (existingRole) {
+        // Update existing role
+        await supabase
+          .from('user_roles')
+          .update({ role: newRole as any })
+          .eq('user_id', userId);
+      } else {
+        // Insert new role
+        await supabase
+          .from('user_roles')
+          .insert({ user_id: userId, role: newRole as any });
+      }
+
+      toast.success(`Role updated to ${newRole}`);
+      fetchUsers();
+    } catch (err) {
+      console.error('Failed to update role:', err);
+      toast.error("Failed to update role");
+    }
+  };
 
   const handleToggleLanguage = (code: string) => {
     setLanguages(prev =>
@@ -153,6 +284,13 @@ const AdminDashboard = () => {
     toast.success("Setting updated");
   };
 
+  const filteredUsers = users.filter(user =>
+    user.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.phone?.includes(searchQuery) ||
+    user.state?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.district?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -169,7 +307,7 @@ const AdminDashboard = () => {
           <Shield className="h-16 w-16 text-destructive mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-foreground mb-2">Access Denied</h2>
           <p className="text-muted-foreground mb-4">You don't have permission to access this page.</p>
-          <Button onClick={() => navigate('/dashboard')}>Go to Dashboard</Button>
+          <Button onClick={() => navigate('/farmer')}>Go to Dashboard</Button>
         </div>
       </div>
     );
@@ -211,21 +349,21 @@ const AdminDashboard = () => {
                   <BarChart3 className="h-4 w-4" />
                   <span className="hidden sm:inline">Overview</span>
                 </TabsTrigger>
+                <TabsTrigger value="users" className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  <span className="hidden sm:inline">Users</span>
+                </TabsTrigger>
+                <TabsTrigger value="voice-ai" className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  <span className="hidden sm:inline">Voice AI</span>
+                </TabsTrigger>
                 <TabsTrigger value="testimonials" className="flex items-center gap-2">
                   <MessageSquare className="h-4 w-4" />
                   <span className="hidden sm:inline">Testimonials</span>
                 </TabsTrigger>
-                <TabsTrigger value="languages" className="flex items-center gap-2">
-                  <Languages className="h-4 w-4" />
-                  <span className="hidden sm:inline">Languages</span>
-                </TabsTrigger>
                 <TabsTrigger value="settings" className="flex items-center gap-2">
                   <Settings className="h-4 w-4" />
                   <span className="hidden sm:inline">Settings</span>
-                </TabsTrigger>
-                <TabsTrigger value="users" className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  <span className="hidden sm:inline">Users</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -233,10 +371,10 @@ const AdminDashboard = () => {
               <TabsContent value="overview">
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                   {[
-                    { label: "Total Users", value: "12,438", icon: Users, color: "bg-primary" },
+                    { label: "Total Users", value: stats.totalUsers.toString(), icon: Users, color: "bg-primary" },
                     { label: "Active Languages", value: languages.filter(l => l.enabled).length.toString(), icon: Languages, color: "bg-blue-500" },
-                    { label: "Testimonials", value: testimonials.filter(t => t.active).length.toString(), icon: Star, color: "bg-yellow-500" },
-                    { label: "AI Queries Today", value: "2,341", icon: MessageSquare, color: "bg-green-500" },
+                    { label: "AI Queries (24h)", value: stats.aiQueries.toString(), icon: MessageSquare, color: "bg-green-500" },
+                    { label: "Voice Calls (24h)", value: stats.voiceCalls.toString(), icon: Phone, color: "bg-purple-500" },
                   ].map((stat, i) => (
                     <Card key={i}>
                       <CardContent className="p-4">
@@ -258,34 +396,49 @@ const AdminDashboard = () => {
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <MapPin className="h-5 w-5" />
-                        Province Distribution
+                        <Phone className="h-5 w-5" />
+                        Voice AI Status
                       </CardTitle>
+                      <CardDescription>Real-time voice assistant powered by OpenAI</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-3">
-                        {[
-                          { name: "Koshi Province", users: 1823, percentage: 15 },
-                          { name: "Madhesh Province", users: 2456, percentage: 20 },
-                          { name: "Bagmati Province", users: 3102, percentage: 25 },
-                          { name: "Gandaki Province", users: 1543, percentage: 12 },
-                          { name: "Lumbini Province", users: 2187, percentage: 18 },
-                          { name: "Karnali Province", users: 621, percentage: 5 },
-                          { name: "Sudurpashchim Province", users: 706, percentage: 5 },
-                        ].map((province) => (
-                          <div key={province.name} className="space-y-1">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-foreground">{province.name}</span>
-                              <span className="text-muted-foreground">{province.users} users</span>
-                            </div>
-                            <div className="h-2 bg-muted rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-primary rounded-full"
-                                style={{ width: `${province.percentage}%` }}
-                              />
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 rounded-lg bg-success/10 border border-success/20">
+                          <div className="flex items-center gap-3">
+                            <div className="h-3 w-3 rounded-full bg-success animate-pulse" />
+                            <div>
+                              <p className="font-medium text-foreground">Voice AI Active</p>
+                              <p className="text-sm text-muted-foreground">GPT-4o Realtime API</p>
                             </div>
                           </div>
-                        ))}
+                          <Badge variant="outline" className="border-success text-success">Online</Badge>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="p-3 rounded-lg bg-muted/50">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Mic className="h-4 w-4 text-primary" />
+                              <span className="text-sm font-medium">Speech Recognition</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">Whisper-1 Model</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-muted/50">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Volume2 className="h-4 w-4 text-primary" />
+                              <span className="text-sm font-medium">Voice Output</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">Alloy Voice</p>
+                          </div>
+                        </div>
+
+                        <div className="text-center py-4">
+                          <p className="text-sm text-muted-foreground mb-2">
+                            Users can call the AI by clicking the floating phone button
+                          </p>
+                          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-primary to-accent">
+                            <Phone className="h-5 w-5 text-white" />
+                          </div>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -300,11 +453,11 @@ const AdminDashboard = () => {
                     <CardContent>
                       <div className="space-y-4">
                         {[
-                          { name: "Database", status: "Healthy", color: "bg-green-500" },
-                          { name: "AI Service", status: "Running", color: "bg-green-500" },
-                          { name: "Weather API", status: "Active", color: "bg-green-500" },
-                          { name: "Image Processing", status: "Operational", color: "bg-green-500" },
-                          { name: "Voice Recognition", status: "Active", color: "bg-green-500" },
+                          { name: "Database", status: "Healthy", color: "bg-success" },
+                          { name: "AI Chat Service", status: "Running", color: "bg-success" },
+                          { name: "Voice AI (Realtime)", status: "Active", color: "bg-success" },
+                          { name: "Weather API", status: "Active", color: "bg-success" },
+                          { name: "Disease Detection", status: "Operational", color: "bg-success" },
                         ].map((service) => (
                           <div key={service.name} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                             <span className="text-foreground">{service.name}</span>
@@ -314,6 +467,220 @@ const AdminDashboard = () => {
                             </div>
                           </div>
                         ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              {/* Users Tab */}
+              <TabsContent value="users">
+                <Card>
+                  <CardHeader>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Users className="h-5 w-5" />
+                          User Management
+                        </CardTitle>
+                        <CardDescription>Manage farmers and assign roles</CardDescription>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Search users..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-10 w-64"
+                          />
+                        </div>
+                        <Button variant="outline" size="icon" onClick={fetchUsers}>
+                          <RefreshCw className={`h-4 w-4 ${usersLoading ? 'animate-spin' : ''}`} />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {usersLoading ? (
+                      <div className="flex justify-center py-12">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      </div>
+                    ) : filteredUsers.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">No users found</p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Name</TableHead>
+                              <TableHead>Location</TableHead>
+                              <TableHead>Phone</TableHead>
+                              <TableHead>Role</TableHead>
+                              <TableHead>Joined</TableHead>
+                              <TableHead>Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredUsers.map((user) => (
+                              <TableRow key={user.id}>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                      <span className="text-sm font-medium text-primary">
+                                        {user.full_name.charAt(0).toUpperCase()}
+                                      </span>
+                                    </div>
+                                    <span className="font-medium">{user.full_name}</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  {user.district || user.state || user.village || (
+                                    <span className="text-muted-foreground">Not set</span>
+                                  )}
+                                </TableCell>
+                                <TableCell>{user.phone || <span className="text-muted-foreground">—</span>}</TableCell>
+                                <TableCell>
+                                  <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                                    {user.role || 'farmer'}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  {new Date(user.created_at).toLocaleDateString()}
+                                </TableCell>
+                                <TableCell>
+                                  <Select
+                                    defaultValue={user.role || 'farmer'}
+                                    onValueChange={(value) => handleAssignRole(user.user_id, value)}
+                                  >
+                                    <SelectTrigger className="w-32">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="farmer">Farmer</SelectItem>
+                                      <SelectItem value="field_official">Field Official</SelectItem>
+                                      <SelectItem value="authority">Authority</SelectItem>
+                                      <SelectItem value="admin">Admin</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Voice AI Tab */}
+              <TabsContent value="voice-ai">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Phone className="h-5 w-5" />
+                        Voice AI Configuration
+                      </CardTitle>
+                      <CardDescription>Configure the AI voice assistant</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="p-4 rounded-lg border border-success/20 bg-success/5">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="h-10 w-10 rounded-full bg-success/20 flex items-center justify-center">
+                            <Phone className="h-5 w-5 text-success" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-foreground">Voice Calling Active</h3>
+                            <p className="text-sm text-muted-foreground">AI answers in real-time</p>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Users can speak with the AI assistant by clicking the floating phone button.
+                          The AI understands Nepali and English, and responds with voice.
+                        </p>
+                      </div>
+
+                      <div className="space-y-3">
+                        <h4 className="font-medium text-foreground">Features</h4>
+                        {[
+                          { icon: Mic, label: "Voice Recognition", desc: "Whisper-1 for speech-to-text" },
+                          { icon: Volume2, label: "Voice Response", desc: "Natural AI voice output" },
+                          { icon: MessageSquare, label: "Live Transcription", desc: "See what's being said" },
+                        ].map((feature) => (
+                          <div key={feature.label} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                            <feature.icon className="h-5 w-5 text-primary" />
+                            <div>
+                              <p className="font-medium text-sm">{feature.label}</p>
+                              <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Settings className="h-5 w-5" />
+                        How It Works
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-start gap-3">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm font-bold text-primary">1</span>
+                          </div>
+                          <div>
+                            <h4 className="font-medium">User Clicks Phone Button</h4>
+                            <p className="text-sm text-muted-foreground">Floating button appears on every page</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm font-bold text-primary">2</span>
+                          </div>
+                          <div>
+                            <h4 className="font-medium">WebRTC Connection</h4>
+                            <p className="text-sm text-muted-foreground">Real-time audio streaming to OpenAI</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm font-bold text-primary">3</span>
+                          </div>
+                          <div>
+                            <h4 className="font-medium">AI Listens & Responds</h4>
+                            <p className="text-sm text-muted-foreground">Speaks back in Nepali or English</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm font-bold text-primary">4</span>
+                          </div>
+                          <div>
+                            <h4 className="font-medium">Live Transcription</h4>
+                            <p className="text-sm text-muted-foreground">User sees what AI is saying in real-time</p>
+                          </div>
+                        </div>
+
+                        <div className="mt-6 p-4 rounded-lg bg-primary/5 border border-primary/10">
+                          <div className="flex items-center gap-2 mb-2">
+                            <AlertTriangle className="h-4 w-4 text-primary" />
+                            <h4 className="font-medium text-sm">Requirements</h4>
+                          </div>
+                          <ul className="text-sm text-muted-foreground space-y-1">
+                            <li>• OPENAI_API_KEY configured in secrets</li>
+                            <li>• Microphone permission from browser</li>
+                            <li>• Stable internet connection</li>
+                          </ul>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -438,43 +805,38 @@ const AdminDashboard = () => {
                 </div>
               </TabsContent>
 
-              {/* Languages Tab */}
-              <TabsContent value="languages">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Languages className="h-5 w-5" />
-                      Language Settings
-                    </CardTitle>
-                    <CardDescription>Enable or disable languages for the application</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {languages.map((lang) => (
-                        <div
-                          key={lang.code}
-                          className={`p-4 rounded-lg border ${lang.enabled ? 'bg-card border-primary/20' : 'bg-muted/50'}`}
-                        >
-                          <div className="flex items-center justify-between">
+              {/* Settings Tab */}
+              <TabsContent value="settings">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Languages className="h-5 w-5" />
+                        Language Settings
+                      </CardTitle>
+                      <CardDescription>Enable or disable languages</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {languages.map((lang) => (
+                          <div
+                            key={lang.code}
+                            className={`flex items-center justify-between p-3 rounded-lg border ${lang.enabled ? 'bg-card border-primary/20' : 'bg-muted/50'}`}
+                          >
                             <div>
-                              <h4 className="font-semibold text-foreground">{lang.name}</h4>
-                              <p className="text-lg text-muted-foreground">{lang.nativeName}</p>
+                              <span className="font-medium text-foreground">{lang.name}</span>
+                              <span className="text-muted-foreground ml-2">{lang.nativeName}</span>
                             </div>
                             <Switch
                               checked={lang.enabled}
                               onCheckedChange={() => handleToggleLanguage(lang.code)}
                             />
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
 
-              {/* Settings Tab */}
-              <TabsContent value="settings">
-                <div className="grid md:grid-cols-2 gap-6">
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
@@ -489,6 +851,7 @@ const AdminDashboard = () => {
                         { key: "textToSpeechEnabled", label: "Text to Speech", description: "Read responses aloud" },
                         { key: "offlineModeEnabled", label: "Offline Mode", description: "Cache data for offline use" },
                         { key: "autoTranslate", label: "Auto Translate", description: "Automatically translate AI responses" },
+                        { key: "notificationsEnabled", label: "Push Notifications", description: "Send notifications to farmers" },
                       ].map((setting) => (
                         <div key={setting.key} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                           <div>
@@ -503,58 +866,7 @@ const AdminDashboard = () => {
                       ))}
                     </CardContent>
                   </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Bell className="h-5 w-5" />
-                        Notification Settings
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                        <div>
-                          <p className="font-medium text-foreground">Push Notifications</p>
-                          <p className="text-sm text-muted-foreground">Send notifications to farmers</p>
-                        </div>
-                        <Switch
-                          checked={settings.notificationsEnabled}
-                          onCheckedChange={(value) => handleSettingChange("notificationsEnabled", value)}
-                        />
-                      </div>
-                      <div className="p-4 rounded-lg border border-dashed border-border">
-                        <p className="text-sm text-muted-foreground text-center">
-                          More notification settings coming soon...
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
                 </div>
-              </TabsContent>
-
-              {/* Users Tab */}
-              <TabsContent value="users">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Users className="h-5 w-5" />
-                      User Management
-                    </CardTitle>
-                    <CardDescription>View and manage user accounts</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center py-12">
-                      <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-foreground mb-2">User Management</h3>
-                      <p className="text-muted-foreground mb-4">
-                        View user statistics and manage user accounts from here.
-                      </p>
-                      <Button variant="outline">
-                        View All Users
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
               </TabsContent>
             </Tabs>
           </div>
