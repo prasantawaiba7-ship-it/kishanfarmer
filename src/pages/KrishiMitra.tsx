@@ -4,6 +4,7 @@ import { Bot, Mic, Volume2, Leaf, CloudSun, Bug, Sprout, MessageCircle, Quote, S
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { AIAssistant } from "@/components/ai/AIAssistant";
+import { VoiceAssistantButton } from "@/components/ai/VoiceAssistantButton";
 import { useLanguage } from "@/hooks/useLanguage";
 
 const features = [
@@ -301,6 +302,9 @@ const KrishiMitra = () => {
         </main>
 
         <Footer />
+        
+        {/* Floating Voice Assistant */}
+        <VoiceAssistantButton />
       </div>
     </>
   );
