@@ -41,6 +41,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { SubscriptionAnalytics } from "@/components/admin/SubscriptionAnalytics";
+import { AppSettingsManager } from "@/components/admin/AppSettingsManager";
+import { SubscriptionPlansManager } from "@/components/admin/SubscriptionPlansManager";
+import { ContentBlocksManager } from "@/components/admin/ContentBlocksManager";
+import { EmailSettingsManager } from "@/components/admin/EmailSettingsManager";
+import { PdfReportsManager } from "@/components/admin/PdfReportsManager";
+import { ActivityLogsViewer } from "@/components/admin/ActivityLogsViewer";
 
 interface FarmerProfile {
   id: string;
@@ -346,7 +352,7 @@ const AdminDashboard = () => {
 
             {/* Tabs */}
             <Tabs defaultValue="overview" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 gap-2 h-auto p-2">
+              <TabsList className="flex flex-wrap w-full gap-1 h-auto p-2">
                 <TabsTrigger value="overview" className="flex items-center gap-2">
                   <BarChart3 className="h-4 w-4" />
                   <span className="hidden sm:inline">Overview</span>
@@ -359,17 +365,29 @@ const AdminDashboard = () => {
                   <Crown className="h-4 w-4" />
                   <span className="hidden sm:inline">Subscriptions</span>
                 </TabsTrigger>
-                <TabsTrigger value="voice-ai" className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  <span className="hidden sm:inline">Voice AI</span>
+                <TabsTrigger value="plans" className="flex items-center gap-2">
+                  <Star className="h-4 w-4" />
+                  <span className="hidden sm:inline">Plans</span>
                 </TabsTrigger>
-                <TabsTrigger value="testimonials" className="flex items-center gap-2">
+                <TabsTrigger value="reports" className="flex items-center gap-2">
+                  <Database className="h-4 w-4" />
+                  <span className="hidden sm:inline">Reports</span>
+                </TabsTrigger>
+                <TabsTrigger value="content" className="flex items-center gap-2">
                   <MessageSquare className="h-4 w-4" />
-                  <span className="hidden sm:inline">Testimonials</span>
+                  <span className="hidden sm:inline">Content</span>
+                </TabsTrigger>
+                <TabsTrigger value="email" className="flex items-center gap-2">
+                  <Bell className="h-4 w-4" />
+                  <span className="hidden sm:inline">Email</span>
                 </TabsTrigger>
                 <TabsTrigger value="settings" className="flex items-center gap-2">
                   <Settings className="h-4 w-4" />
                   <span className="hidden sm:inline">Settings</span>
+                </TabsTrigger>
+                <TabsTrigger value="activity" className="flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4" />
+                  <span className="hidden sm:inline">Activity</span>
                 </TabsTrigger>
               </TabsList>
 
