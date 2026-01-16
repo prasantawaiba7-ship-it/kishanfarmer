@@ -532,6 +532,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          queries_limit: number
+          queries_used: number
+          status: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          queries_limit?: number
+          queries_used?: number
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          queries_limit?: number
+          queries_used?: number
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       weather_data: {
         Row: {
           created_at: string
@@ -590,6 +635,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_user_query: { Args: { p_user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -597,6 +643,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_query_count: { Args: { p_user_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "farmer" | "field_official" | "authority" | "insurer"
@@ -634,6 +681,8 @@ export type Database = {
         | "moderate_stress"
         | "severe_damage"
         | "pending"
+      subscription_plan: "free" | "monthly" | "yearly"
+      subscription_status: "active" | "expired" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -800,6 +849,8 @@ export const Constants = {
         "severe_damage",
         "pending",
       ],
+      subscription_plan: ["free", "monthly", "yearly"],
+      subscription_status: ["active", "expired", "cancelled"],
     },
   },
 } as const
