@@ -2,3 +2,9 @@ project_id = "vybwydjazgltreionypl"
 
 [functions.elevenlabs-tts]
 verify_jwt = false
+
+[functions.customer-portal]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
