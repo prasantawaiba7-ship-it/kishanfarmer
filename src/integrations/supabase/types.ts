@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          ip_address: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       ai_analysis_results: {
         Row: {
           analyzed_at: string
@@ -122,6 +155,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      app_settings: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      content_blocks: {
+        Row: {
+          active: boolean
+          content: string
+          content_type: string
+          created_at: string
+          id: string
+          key: string
+          language: string
+          metadata: Json | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          content: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          key: string
+          language?: string
+          metadata?: Json | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          content?: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          key?: string
+          language?: string
+          metadata?: Json | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       crop_photos: {
         Row: {
@@ -300,6 +402,36 @@ export type Database = {
           },
         ]
       }
+      email_settings: {
+        Row: {
+          body_template: string
+          created_at: string
+          enabled: boolean
+          event_type: string
+          id: string
+          subject_template: string
+          updated_at: string
+        }
+        Insert: {
+          body_template: string
+          created_at?: string
+          enabled?: boolean
+          event_type: string
+          id?: string
+          subject_template: string
+          updated_at?: string
+        }
+        Update: {
+          body_template?: string
+          created_at?: string
+          enabled?: boolean
+          event_type?: string
+          id?: string
+          subject_template?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       farmer_profiles: {
         Row: {
           avatar_url: string | null
@@ -389,6 +521,66 @@ export type Database = {
           state?: string
         }
         Relationships: []
+      }
+      pdf_reports: {
+        Row: {
+          created_at: string
+          crop_type: string | null
+          detected_issue: string | null
+          farmer_id: string
+          file_url: string | null
+          id: string
+          metadata: Json | null
+          plot_id: string | null
+          report_type: string
+          severity: string | null
+          status: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          crop_type?: string | null
+          detected_issue?: string | null
+          farmer_id: string
+          file_url?: string | null
+          id?: string
+          metadata?: Json | null
+          plot_id?: string | null
+          report_type?: string
+          severity?: string | null
+          status?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          crop_type?: string | null
+          detected_issue?: string | null
+          farmer_id?: string
+          file_url?: string | null
+          id?: string
+          metadata?: Json | null
+          plot_id?: string | null
+          report_type?: string
+          severity?: string | null
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdf_reports_farmer_id_fkey"
+            columns: ["farmer_id"]
+            isOneToOne: false
+            referencedRelation: "farmer_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pdf_reports_plot_id_fkey"
+            columns: ["plot_id"]
+            isOneToOne: false
+            referencedRelation: "plots"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       plots: {
         Row: {
@@ -510,6 +702,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subscription_plans: {
+        Row: {
+          ai_call_limit: number | null
+          created_at: string
+          currency: string
+          description: string | null
+          description_ne: string | null
+          display_order: number
+          features: Json | null
+          id: string
+          is_active: boolean
+          is_visible: boolean
+          name: string
+          name_ne: string | null
+          pdf_report_limit: number | null
+          plan_type: string
+          price: number
+          stripe_price_id: string | null
+          stripe_product_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          ai_call_limit?: number | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          description_ne?: string | null
+          display_order?: number
+          features?: Json | null
+          id?: string
+          is_active?: boolean
+          is_visible?: boolean
+          name: string
+          name_ne?: string | null
+          pdf_report_limit?: number | null
+          plan_type: string
+          price?: number
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ai_call_limit?: number | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          description_ne?: string | null
+          display_order?: number
+          features?: Json | null
+          id?: string
+          is_active?: boolean
+          is_visible?: boolean
+          name?: string
+          name_ne?: string | null
+          pdf_report_limit?: number | null
+          plan_type?: string
+          price?: number
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
