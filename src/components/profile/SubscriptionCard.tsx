@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Crown, Calendar, MessageSquare, Loader2, ExternalLink } from 'lucide-react';
+import { Crown, Calendar, MessageSquare, Loader2, ExternalLink, Settings } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,10 +7,13 @@ import { Progress } from '@/components/ui/progress';
 import { useSubscription, SUBSCRIPTION_PLANS } from '@/hooks/useSubscription';
 import { useLanguage } from '@/hooks/useLanguage';
 import { SubscriptionModal } from '@/components/subscription/SubscriptionModal';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
 export const SubscriptionCard = () => {
   const { language } = useLanguage();
+  const { toast } = useToast();
   const {
     subscribed,
     plan,
@@ -23,6 +26,7 @@ export const SubscriptionCard = () => {
   } = useSubscription();
   const [showModal, setShowModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [openingPortal, setOpeningPortal] = useState(false);
 
   const isNepali = language === 'ne';
 
@@ -30,6 +34,26 @@ export const SubscriptionCard = () => {
     setRefreshing(true);
     await checkSubscription();
     setRefreshing(false);
+  };
+
+  const handleOpenPortal = async () => {
+    setOpeningPortal(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      console.error('Error opening customer portal:', error);
+      toast({
+        title: isNepali ? 'त्रुटि' : 'Error',
+        description: isNepali ? 'पोर्टल खोल्न सकिएन' : 'Could not open portal',
+        variant: 'destructive',
+      });
+    } finally {
+      setOpeningPortal(false);
+    }
   };
 
   const getPlanDisplay = () => {
@@ -167,14 +191,26 @@ export const SubscriptionCard = () => {
 
           {/* Manage Subscription for Premium */}
           {subscribed && (
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => setShowModal(true)}
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              {isNepali ? 'सदस्यता व्यवस्थापन' : 'Manage Subscription'}
-            </Button>
+            <div className="space-y-2">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleOpenPortal}
+                disabled={openingPortal}
+              >
+                {openingPortal ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Settings className="w-4 h-4 mr-2" />
+                )}
+                {isNepali ? 'सदस्यता व्यवस्थापन' : 'Manage Subscription'}
+              </Button>
+              <p className="text-xs text-center text-muted-foreground">
+                {isNepali 
+                  ? 'रद्द गर्नुहोस्, भुक्तानी विधि बदल्नुहोस्'
+                  : 'Cancel, change payment method'}
+              </p>
+            </div>
           )}
         </CardContent>
       </Card>
