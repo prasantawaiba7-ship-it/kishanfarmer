@@ -37,8 +37,10 @@ import {
   Search,
   UserPlus,
   AlertTriangle,
+  Crown,
 } from "lucide-react";
 import { toast } from "sonner";
+import { SubscriptionAnalytics } from "@/components/admin/SubscriptionAnalytics";
 
 interface FarmerProfile {
   id: string;
@@ -344,7 +346,7 @@ const AdminDashboard = () => {
 
             {/* Tabs */}
             <Tabs defaultValue="overview" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 gap-2 h-auto p-2">
+              <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 gap-2 h-auto p-2">
                 <TabsTrigger value="overview" className="flex items-center gap-2">
                   <BarChart3 className="h-4 w-4" />
                   <span className="hidden sm:inline">Overview</span>
@@ -352,6 +354,10 @@ const AdminDashboard = () => {
                 <TabsTrigger value="users" className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
                   <span className="hidden sm:inline">Users</span>
+                </TabsTrigger>
+                <TabsTrigger value="subscriptions" className="flex items-center gap-2">
+                  <Crown className="h-4 w-4" />
+                  <span className="hidden sm:inline">Subscriptions</span>
                 </TabsTrigger>
                 <TabsTrigger value="voice-ai" className="flex items-center gap-2">
                   <Phone className="h-4 w-4" />
@@ -575,6 +581,11 @@ const AdminDashboard = () => {
                     )}
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              {/* Subscriptions Tab */}
+              <TabsContent value="subscriptions">
+                <SubscriptionAnalytics />
               </TabsContent>
 
               {/* Voice AI Tab */}
