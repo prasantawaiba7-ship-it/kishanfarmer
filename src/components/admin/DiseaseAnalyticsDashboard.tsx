@@ -17,6 +17,7 @@ import {
   Download, RefreshCw, Loader2, Users, Image
 } from 'lucide-react';
 import { NepalDiseaseMap } from './NepalDiseaseMap';
+import { DiseasePrediction } from '@/components/disease/DiseasePrediction';
 
 const CHART_COLORS = [
   'hsl(var(--chart-1))',
@@ -313,10 +314,16 @@ export function DiseaseAnalyticsDashboard() {
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="prediction">Prediction</TabsTrigger>
           <TabsTrigger value="map">Map View</TabsTrigger>
           <TabsTrigger value="reports">All Reports</TabsTrigger>
           <TabsTrigger value="gallery">Image Gallery</TabsTrigger>
         </TabsList>
+
+        {/* Prediction Tab */}
+        <TabsContent value="prediction">
+          <DiseasePrediction />
+        </TabsContent>
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
