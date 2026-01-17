@@ -128,6 +128,9 @@ function getElevenLabsFunctionUrl(): string {
   return `${base}/functions/v1/elevenlabs-tts`;
 }
 
+// Circuit-breaker: once ElevenLabs fails, skip it for the rest of the session
+let elevenLabsDisabled = false;
+
 export function useTextToSpeech(options: UseTextToSpeechOptions = {}) {
   const { language = "en", rate = 0.9, pitch = 1, onStart, onEnd, onError } = options;
 
@@ -262,6 +265,13 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}) {
 
       setIsLoading(true);
       setCurrentMessageId(messageId || null);
+
+      // Circuit-breaker: skip ElevenLabs if it already failed this session
+      if (elevenLabsDisabled) {
+        speakWithBrowser(textToSpeak, messageId);
+        return;
+      }
+
       abortControllerRef.current = new AbortController();
 
       try {
@@ -286,10 +296,14 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}) {
         // When ElevenLabs is blocked, the backend returns 200 + JSON payload.
         // Treat that as a soft failure and fall back to browser TTS.
         if (!response.ok || isJson) {
+          // Trip the circuit-breaker
+          elevenLabsDisabled = true;
+          console.warn("ElevenLabs circuit-breaker tripped. Using browser TTS for this session.");
+
           if (isJson) {
             try {
               const payload = await response.json();
-              console.warn("ElevenLabs TTS unavailable, falling back:", payload);
+              console.warn("ElevenLabs TTS unavailable:", payload);
             } catch {
               // ignore
             }
