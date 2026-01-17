@@ -158,6 +158,34 @@ serve(async (req) => {
             console.log(`Created ${notifications.length} notifications`);
           }
         }
+
+        // Trigger email notifications asynchronously
+        try {
+          const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+          const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+          
+          fetch(`${supabaseUrl}/functions/v1/send-outbreak-email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${supabaseAnonKey}`,
+            },
+            body: JSON.stringify({
+              alertId: newAlert.id,
+              diseaseName: detected_disease,
+              district,
+              state,
+              detectionCount: uniqueFarmers.size,
+              severity: severity || "medium",
+            }),
+          }).then(res => {
+            console.log(`Email notification request sent, status: ${res.status}`);
+          }).catch(err => {
+            console.error("Failed to trigger email notifications:", err);
+          });
+        } catch (emailErr) {
+          console.error("Error triggering email notifications:", emailErr);
+        }
       }
 
       return new Response(

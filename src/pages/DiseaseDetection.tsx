@@ -4,8 +4,12 @@ import Footer from '@/components/layout/Footer';
 import { NepaliDiseaseDetector } from '@/components/ai/NepaliDiseaseDetector';
 import { FloatingVoiceButton } from '@/components/ai/FloatingVoiceButton';
 import { OutbreakAlertsBanner } from '@/components/disease/OutbreakAlertsBanner';
+import { DiseasePrediction } from '@/components/disease/DiseasePrediction';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function DiseaseDetection() {
+  const { user } = useAuth();
+  
   return (
     <>
       <Helmet>
@@ -34,6 +38,13 @@ export default function DiseaseDetection() {
           <OutbreakAlertsBanner />
 
           <NepaliDiseaseDetector />
+
+          {/* Disease Prediction Section (for logged in users) */}
+          {user && (
+            <div className="mt-12">
+              <DiseasePrediction />
+            </div>
+          )}
 
           {/* How to Use Section */}
           <div className="mt-12 p-6 bg-muted/50 rounded-2xl">
