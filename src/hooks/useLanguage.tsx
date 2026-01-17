@@ -14,7 +14,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem('cropic-language');
     // Check if saved language is valid for Nepal
-    if (saved && (saved === 'en' || saved === 'ne' || saved === 'tamang' || saved === 'newar' || saved === 'maithili' || saved === 'magar' || saved === 'rai')) {
+    if (saved && (saved === 'en' || saved === 'ne' || saved === 'hi' || saved === 'tamang' || saved === 'newar' || saved === 'maithili' || saved === 'magar' || saved === 'rai')) {
       return saved as Language;
     }
     return 'ne'; // Default to Nepali
