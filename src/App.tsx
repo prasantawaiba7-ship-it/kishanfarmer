@@ -20,6 +20,7 @@ import InstallPage from "./pages/InstallPage";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancelled from "./pages/PaymentCancelled";
 import DiseaseDetection from "./pages/DiseaseDetection";
+import ExpertDirectory from "./pages/ExpertDirectory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const App = () => (
                 <Route path="/authority" element={<AuthorityDashboard />} />
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/disease-detection" element={<DiseaseDetection />} />
+                <Route path="/expert-directory" element={<ExpertDirectory />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

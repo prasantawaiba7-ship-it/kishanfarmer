@@ -1,0 +1,427 @@
+import { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Phone, Mail, MapPin, Clock, Search, Filter, User, 
+  Building2, ChevronDown, CheckCircle, X, PhoneCall,
+  MessageCircle, Briefcase
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Skeleton } from '@/components/ui/skeleton';
+
+interface AgriculturalOfficer {
+  id: string;
+  name: string;
+  name_ne: string | null;
+  designation: string;
+  designation_ne: string | null;
+  phone: string | null;
+  alternate_phone: string | null;
+  email: string | null;
+  district: string;
+  province: string;
+  municipality: string | null;
+  office_name: string | null;
+  office_name_ne: string | null;
+  office_address_ne: string | null;
+  specializations: string[] | null;
+  working_hours: string | null;
+  is_available: boolean | null;
+  profile_image_url: string | null;
+}
+
+// Nepal provinces
+const PROVINCES = [
+  { value: 'all', label: 'सबै प्रदेश' },
+  { value: 'Koshi', label: 'कोशी प्रदेश' },
+  { value: 'Madhesh', label: 'मधेश प्रदेश' },
+  { value: 'Bagmati', label: 'बागमती प्रदेश' },
+  { value: 'Gandaki', label: 'गण्डकी प्रदेश' },
+  { value: 'Lumbini', label: 'लुम्बिनी प्रदेश' },
+  { value: 'Karnali', label: 'कर्णाली प्रदेश' },
+  { value: 'Sudurpashchim', label: 'सुदूरपश्चिम प्रदेश' },
+];
+
+export function AgriculturalOfficerDirectory() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedProvince, setSelectedProvince] = useState('all');
+  const [selectedOfficer, setSelectedOfficer] = useState<AgriculturalOfficer | null>(null);
+
+  // Fetch officers from database
+  const { data: officers, isLoading } = useQuery({
+    queryKey: ['agricultural-officers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agricultural_officers')
+        .select('*')
+        .eq('is_active', true)
+        .order('district');
+      
+      if (error) throw error;
+      return data as AgriculturalOfficer[];
+    }
+  });
+
+  // Filter officers
+  const filteredOfficers = useMemo(() => {
+    if (!officers) return [];
+    
+    return officers.filter(officer => {
+      const matchesSearch = 
+        searchTerm === '' ||
+        officer.name_ne?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        officer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        officer.district.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        officer.municipality?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        officer.specializations?.some(s => s.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      const matchesProvince = 
+        selectedProvince === 'all' || 
+        officer.province === selectedProvince;
+      
+      return matchesSearch && matchesProvince;
+    });
+  }, [officers, searchTerm, selectedProvince]);
+
+  // Get unique districts for the selected province
+  const availableDistricts = useMemo(() => {
+    if (!officers) return [];
+    const districts = new Set(
+      officers
+        .filter(o => selectedProvince === 'all' || o.province === selectedProvince)
+        .map(o => o.district)
+    );
+    return Array.from(districts).sort();
+  }, [officers, selectedProvince]);
+
+  const handleCall = (phone: string) => {
+    window.location.href = `tel:${phone}`;
+  };
+
+  const handleWhatsApp = (phone: string) => {
+    const cleanPhone = phone.replace(/[^\d+]/g, '');
+    window.open(`https://wa.me/${cleanPhone}`, '_blank');
+  };
+
+  const handleEmail = (email: string) => {
+    window.location.href = `mailto:${email}`;
+  };
+
+  return (
+    <Card className="border-border/50 overflow-hidden">
+      <CardHeader className="bg-gradient-to-r from-blue-500/10 to-primary/10">
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <Building2 className="w-6 h-6 text-primary" />
+          👨‍🌾 कृषि प्राविधिक सम्पर्क निर्देशिका
+        </CardTitle>
+        <p className="text-sm text-muted-foreground mt-1">
+          आफ्नो नजिकको कृषि प्राविधिकसँग सम्पर्क गर्नुहोस्
+        </p>
+      </CardHeader>
+
+      <CardContent className="p-4 space-y-4">
+        {/* Search and Filter */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="नाम, जिल्ला वा विशेषज्ञता खोज्नुहोस्..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={selectedProvince} onValueChange={setSelectedProvince}>
+            <SelectTrigger className="w-full sm:w-48">
+              <Filter className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="प्रदेश छान्नुहोस्" />
+            </SelectTrigger>
+            <SelectContent>
+              {PROVINCES.map((province) => (
+                <SelectItem key={province.value} value={province.value}>
+                  {province.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Results count */}
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">
+            {filteredOfficers.length} कृषि प्राविधिक भेटियो
+          </span>
+          {availableDistricts.length > 0 && (
+            <span className="text-muted-foreground">
+              {availableDistricts.length} जिल्लामा
+            </span>
+          )}
+        </div>
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="p-4 rounded-xl border bg-card">
+                <div className="flex gap-4">
+                  <Skeleton className="w-16 h-16 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-5 w-1/3" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-4 w-2/3" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Officers List */}
+        {!isLoading && (
+          <div className="space-y-3">
+            <AnimatePresence>
+              {filteredOfficers.map((officer, index) => (
+                <motion.div
+                  key={officer.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ delay: index * 0.05 }}
+                  className={`p-4 rounded-xl border bg-card hover:shadow-md transition-all cursor-pointer
+                    ${selectedOfficer?.id === officer.id ? 'ring-2 ring-primary' : ''}`}
+                  onClick={() => setSelectedOfficer(
+                    selectedOfficer?.id === officer.id ? null : officer
+                  )}
+                >
+                  <div className="flex items-start gap-4">
+                    {/* Avatar */}
+                    <div className="relative flex-shrink-0">
+                      <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                        {officer.profile_image_url ? (
+                          <img 
+                            src={officer.profile_image_url} 
+                            alt={officer.name_ne || officer.name}
+                            className="w-full h-full rounded-full object-cover"
+                          />
+                        ) : (
+                          <User className="w-6 h-6 text-primary" />
+                        )}
+                      </div>
+                      {officer.is_available && (
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-success rounded-full border-2 border-background" />
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h3 className="font-semibold text-base">
+                            {officer.name_ne || officer.name}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {officer.designation_ne || officer.designation}
+                          </p>
+                        </div>
+                        {officer.is_available && (
+                          <Badge variant="outline" className="bg-success/10 text-success border-success/20 flex-shrink-0">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            उपलब्ध
+                          </Badge>
+                        )}
+                      </div>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {officer.district}, {officer.municipality || officer.province}
+                        </span>
+                        {officer.working_hours && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {officer.working_hours}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Specializations */}
+                      {officer.specializations && officer.specializations.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {officer.specializations.slice(0, 3).map((spec, i) => (
+                            <Badge key={i} variant="secondary" className="text-xs">
+                              {spec}
+                            </Badge>
+                          ))}
+                          {officer.specializations.length > 3 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{officer.specializations.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${
+                      selectedOfficer?.id === officer.id ? 'rotate-180' : ''
+                    }`} />
+                  </div>
+
+                  {/* Expanded Details */}
+                  <AnimatePresence>
+                    {selectedOfficer?.id === officer.id && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="pt-4 mt-4 border-t space-y-4">
+                          {/* Office Info */}
+                          {(officer.office_name_ne || officer.office_address_ne) && (
+                            <div className="p-3 bg-muted/50 rounded-lg">
+                              <p className="text-sm font-medium flex items-center gap-2">
+                                <Building2 className="w-4 h-4 text-primary" />
+                                {officer.office_name_ne || officer.office_name}
+                              </p>
+                              {officer.office_address_ne && (
+                                <p className="text-sm text-muted-foreground mt-1 ml-6">
+                                  📍 {officer.office_address_ne}
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {/* All Specializations */}
+                          {officer.specializations && officer.specializations.length > 0 && (
+                            <div>
+                              <p className="text-sm font-medium mb-2 flex items-center gap-2">
+                                <Briefcase className="w-4 h-4" />
+                                विशेषज्ञता क्षेत्रहरू:
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {officer.specializations.map((spec, i) => (
+                                  <Badge key={i} variant="secondary">
+                                    {spec}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Contact Buttons */}
+                          <div className="flex flex-wrap gap-2">
+                            {officer.phone && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCall(officer.phone!);
+                                  }}
+                                  className="gap-2"
+                                >
+                                  <PhoneCall className="w-4 h-4" />
+                                  फोन गर्नुहोस्
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleWhatsApp(officer.phone!);
+                                  }}
+                                  className="gap-2 bg-[#25D366]/10 hover:bg-[#25D366]/20 border-[#25D366]/30"
+                                >
+                                  <MessageCircle className="w-4 h-4 text-[#25D366]" />
+                                  WhatsApp
+                                </Button>
+                              </>
+                            )}
+                            {officer.email && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEmail(officer.email!);
+                                }}
+                                className="gap-2"
+                              >
+                                <Mail className="w-4 h-4" />
+                                इमेल
+                              </Button>
+                            )}
+                          </div>
+
+                          {/* Contact Info */}
+                          <div className="text-sm text-muted-foreground space-y-1">
+                            {officer.phone && (
+                              <p className="flex items-center gap-2">
+                                <Phone className="w-3 h-3" />
+                                {officer.phone}
+                              </p>
+                            )}
+                            {officer.alternate_phone && (
+                              <p className="flex items-center gap-2">
+                                <Phone className="w-3 h-3" />
+                                {officer.alternate_phone} (वैकल्पिक)
+                              </p>
+                            )}
+                            {officer.email && (
+                              <p className="flex items-center gap-2">
+                                <Mail className="w-3 h-3" />
+                                {officer.email}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+
+            {/* Empty State */}
+            {filteredOfficers.length === 0 && !isLoading && (
+              <div className="text-center py-12 text-muted-foreground">
+                <User className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p className="font-medium">कुनै कृषि प्राविधिक भेटिएन</p>
+                <p className="text-sm mt-1">खोज वा फिल्टर परिवर्तन गर्नुहोस्</p>
+                {searchTerm && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-4"
+                    onClick={() => setSearchTerm('')}
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    खोज हटाउनुहोस्
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Help Section */}
+        <div className="mt-6 p-4 bg-blue-500/10 rounded-xl border border-blue-500/20">
+          <h4 className="font-semibold mb-2 flex items-center gap-2">
+            💡 सहायता कसरी लिने?
+          </h4>
+          <ul className="text-sm text-muted-foreground space-y-1">
+            <li>• आफ्नो जिल्लाको कृषि प्राविधिक खोज्नुहोस्</li>
+            <li>• विशेषज्ञता अनुसार छान्न सक्नुहुन्छ (रोग, कीट, बाली)</li>
+            <li>• कार्यालय समयमा फोन वा भ्रमण गर्नुहोस्</li>
+            <li>• गम्भीर समस्यामा तुरुन्त सम्पर्क गर्नुहोस्</li>
+          </ul>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

@@ -47,6 +47,84 @@ export type Database = {
         }
         Relationships: []
       }
+      agricultural_officers: {
+        Row: {
+          alternate_phone: string | null
+          created_at: string
+          designation: string
+          designation_ne: string | null
+          district: string
+          email: string | null
+          id: string
+          is_active: boolean | null
+          is_available: boolean | null
+          municipality: string | null
+          name: string
+          name_ne: string | null
+          office_address: string | null
+          office_address_ne: string | null
+          office_name: string | null
+          office_name_ne: string | null
+          phone: string | null
+          profile_image_url: string | null
+          province: string
+          specializations: string[] | null
+          updated_at: string
+          ward_no: number | null
+          working_hours: string | null
+        }
+        Insert: {
+          alternate_phone?: string | null
+          created_at?: string
+          designation?: string
+          designation_ne?: string | null
+          district: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_available?: boolean | null
+          municipality?: string | null
+          name: string
+          name_ne?: string | null
+          office_address?: string | null
+          office_address_ne?: string | null
+          office_name?: string | null
+          office_name_ne?: string | null
+          phone?: string | null
+          profile_image_url?: string | null
+          province: string
+          specializations?: string[] | null
+          updated_at?: string
+          ward_no?: number | null
+          working_hours?: string | null
+        }
+        Update: {
+          alternate_phone?: string | null
+          created_at?: string
+          designation?: string
+          designation_ne?: string | null
+          district?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_available?: boolean | null
+          municipality?: string | null
+          name?: string
+          name_ne?: string | null
+          office_address?: string | null
+          office_address_ne?: string | null
+          office_name?: string | null
+          office_name_ne?: string | null
+          phone?: string | null
+          profile_image_url?: string | null
+          province?: string
+          specializations?: string[] | null
+          updated_at?: string
+          ward_no?: number | null
+          working_hours?: string | null
+        }
+        Relationships: []
+      }
       ai_analysis_results: {
         Row: {
           analyzed_at: string
