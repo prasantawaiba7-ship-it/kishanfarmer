@@ -2,7 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Mic, MicOff, Volume2, VolumeX, Loader2, X, MessageSquare, 
-  Send, Download, Crown, Camera, RefreshCw, Minimize2, Maximize2
+  Send, Download, Crown, Camera, RefreshCw, Minimize2, Maximize2,
+  Globe, Leaf, Bug, CloudRain, HelpCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +15,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { SubscriptionModal } from '@/components/subscription/SubscriptionModal';
 import { DiseaseImageUpload } from '@/components/ai/DiseaseImageUpload';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -21,9 +28,37 @@ interface Message {
   timestamp: Date;
 }
 
+// Quick action questions in different languages
+const quickQuestions = {
+  ne: [
+    { icon: Bug, text: 'मेरो बालीमा के समस्या छ?', color: 'text-destructive' },
+    { icon: Leaf, text: 'कुन बाली लगाउँदा राम्रो हुन्छ?', color: 'text-primary' },
+    { icon: CloudRain, text: 'आजको मौसम कस्तो छ?', color: 'text-blue-500' },
+    { icon: HelpCircle, text: 'मलखाद कहिले हाल्ने?', color: 'text-warning' },
+  ],
+  hi: [
+    { icon: Bug, text: 'मेरी फसल में क्या समस्या है?', color: 'text-destructive' },
+    { icon: Leaf, text: 'कौन सी फसल लगाना अच्छा रहेगा?', color: 'text-primary' },
+    { icon: CloudRain, text: 'आज का मौसम कैसा है?', color: 'text-blue-500' },
+    { icon: HelpCircle, text: 'खाद कब डालें?', color: 'text-warning' },
+  ],
+  en: [
+    { icon: Bug, text: "What's wrong with my crop?", color: 'text-destructive' },
+    { icon: Leaf, text: 'Which crop should I plant?', color: 'text-primary' },
+    { icon: CloudRain, text: "How's the weather today?", color: 'text-blue-500' },
+    { icon: HelpCircle, text: 'When to apply fertilizer?', color: 'text-warning' },
+  ],
+};
+
+const languageOptions = [
+  { code: 'ne', label: 'नेपाली', flag: '🇳🇵' },
+  { code: 'hi', label: 'हिन्दी', flag: '🇮🇳' },
+  { code: 'en', label: 'English', flag: '🇬🇧' },
+];
+
 export function OnScreenAssistant() {
   const { toast } = useToast();
-  const { language } = useLanguage();
+  const { language: globalLanguage, setLanguage: setGlobalLanguage } = useLanguage();
   const [showPanel, setShowPanel] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
@@ -33,9 +68,25 @@ export function OnScreenAssistant() {
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [autoSpeak, setAutoSpeak] = useState(true);
+  const [assistantLang, setAssistantLang] = useState(globalLanguage);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Use local language for assistant
+  const language = assistantLang;
+  
+  // Get language key for quick questions (map to supported keys)
+  const getQuickQuestionsLang = () => {
+    if (assistantLang === 'hi') return 'hi';
+    if (assistantLang === 'en') return 'en';
+    return 'ne'; // Default to Nepali for all other languages
+  };
+  
+  const handleLanguageChange = (langCode: 'ne' | 'hi' | 'en') => {
+    setAssistantLang(langCode);
+    setGlobalLanguage(langCode);
+  };
   
   const { can_query, queries_used, queries_limit, subscribed, plan, incrementQueryCount, startCheckout, loading: subLoading } = useSubscription();
 
@@ -373,6 +424,34 @@ export function OnScreenAssistant() {
                     {queries_used}/{queries_limit}
                   </span>
                 )}
+                
+                {/* Language Selector */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" title="Change language">
+                      <Globe className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="min-w-[140px]">
+                    {languageOptions.map((lang) => (
+                      <DropdownMenuItem
+                        key={lang.code}
+                        onClick={() => handleLanguageChange(lang.code as 'ne' | 'hi' | 'en')}
+                        className={cn(
+                          "cursor-pointer",
+                          assistantLang === lang.code && "bg-primary/10 text-primary"
+                        )}
+                      >
+                        <span className="mr-2">{lang.flag}</span>
+                        <span>{lang.label}</span>
+                        {assistantLang === lang.code && (
+                          <span className="ml-auto text-primary">✓</span>
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                
                 <Button 
                   variant="ghost" 
                   size="icon" 
@@ -408,19 +487,48 @@ export function OnScreenAssistant() {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 min-h-[200px]">
               {messages.length === 0 ? (
-                <div className="text-center text-muted-foreground text-sm py-8">
+                <div className="text-center text-muted-foreground text-sm py-4 sm:py-6">
                   <div className="text-4xl sm:text-5xl mb-3">🌾</div>
                   <p className="font-medium text-foreground text-base sm:text-lg mb-1">
-                    {language === 'ne' ? 'नमस्ते दाइ/दिदी!' : 'Namaste!'}
+                    {language === 'ne' ? 'नमस्ते दाइ/दिदी!' : language === 'hi' ? 'नमस्ते!' : 'Namaste!'}
                   </p>
-                  <p className="text-xs sm:text-sm max-w-[250px] mx-auto">
+                  <p className="text-xs sm:text-sm max-w-[250px] mx-auto mb-4">
                     {language === 'ne' 
                       ? 'म तपाईंको कृषि मित्र। कृषि सम्बन्धी कुनै पनि प्रश्न सोध्नुहोस्!' 
+                      : language === 'hi'
+                      ? 'मैं आपका कृषि मित्र। खेती के बारे में कुछ भी पूछें!'
                       : "I'm your Krishi Mitra. Ask any farming question!"}
                   </p>
-                  <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
+                  
+                  {/* Quick Action Buttons */}
+                  <div className="grid grid-cols-2 gap-2 px-2 mb-4">
+                    {quickQuestions[getQuickQuestionsLang()].map((q, idx) => (
+                      <motion.button
+                        key={idx}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.1 }}
+                        onClick={() => handleSendMessage(q.text)}
+                        disabled={isLoading}
+                        className={cn(
+                          "flex items-center gap-2 p-2.5 rounded-xl border border-border bg-card",
+                          "hover:border-primary/50 hover:bg-primary/5 transition-all text-left",
+                          "text-xs sm:text-sm touch-manipulation active:scale-95"
+                        )}
+                      >
+                        <q.icon className={cn("w-4 h-4 shrink-0", q.color)} />
+                        <span className="line-clamp-2 leading-tight">{q.text}</span>
+                      </motion.button>
+                    ))}
+                  </div>
+                  
+                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                     <Mic className="w-4 h-4" />
-                    <span>{language === 'ne' ? 'बोल्नुहोस् वा टाइप गर्नुहोस्' : 'Speak or type'}</span>
+                    <span>
+                      {language === 'ne' ? 'बोल्नुहोस् वा टाइप गर्नुहोस्' : 
+                       language === 'hi' ? 'बोलें या टाइप करें' :
+                       'Speak or type'}
+                    </span>
                   </div>
                 </div>
               ) : (

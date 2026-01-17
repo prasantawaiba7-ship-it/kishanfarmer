@@ -1,8 +1,9 @@
-export type Language = 'en' | 'ne' | 'tamang' | 'newar' | 'maithili' | 'magar' | 'rai';
+export type Language = 'en' | 'ne' | 'hi' | 'tamang' | 'newar' | 'maithili' | 'magar' | 'rai';
 
 export const languages: Record<Language, { name: string; nativeName: string }> = {
   en: { name: 'English', nativeName: 'English' },
   ne: { name: 'Nepali', nativeName: 'नेपाली' },
+  hi: { name: 'Hindi', nativeName: 'हिन्दी' },
   tamang: { name: 'Tamang', nativeName: 'तामाङ' },
   newar: { name: 'Newar', nativeName: 'नेवारी' },
   maithili: { name: 'Maithili', nativeName: 'मैथिली' },
@@ -407,6 +408,67 @@ export const translations: Record<Language, Record<string, string>> = {
     ward: 'वडा',
     municipality: 'नगरपालिका',
     ruralMunicipality: 'गाउँपालिका',
+    metropolitanCity: 'महानगरपालिका',
+    subMetropolitanCity: 'उपमहानगरपालिका',
+  },
+  hi: {
+    // Navigation
+    home: 'होम',
+    dashboard: 'डैशबोर्ड',
+    aiAssistant: 'कृषि मित्र',
+    myPlots: 'मेरे खेत',
+    recommendations: 'सिफारिशें',
+    history: 'इतिहास',
+    settings: 'सेटिंग्स',
+    adminDashboard: 'एडमिन डैशबोर्ड',
+    
+    // AI Assistant
+    askAnything: 'खेती के बारे में कुछ भी पूछें...',
+    typeMessage: 'अपना संदेश टाइप करें...',
+    uploadImage: 'फोटो अपलोड करें',
+    voiceInput: 'आवाज से बोलें',
+    send: 'भेजें',
+    analyzing: 'विश्लेषण हो रहा है...',
+    speakNow: 'अब बोलें...',
+    listening: 'सुन रहा है...',
+    stopListening: 'सुनना बंद करें',
+    listen: 'सुनें',
+    stop: 'रोकें',
+    
+    // Crop Recommendations
+    getCropRecommendations: 'फसल सिफारिश प्राप्त करें',
+    soilAnalysis: 'मिट्टी विश्लेषण',
+    weatherForecast: 'मौसम पूर्वानुमान',
+    marketPrices: 'बाजार भाव',
+    viewDetails: 'विवरण देखें',
+    
+    // Disease Detection
+    scanForDisease: 'रोग की जांच करें',
+    takePhoto: 'फोटो लें',
+    uploadFromGallery: 'गैलरी से चुनें',
+    diseaseDetected: 'रोग मिला',
+    healthyCrop: 'स्वस्थ फसल',
+    treatment: 'उपचार',
+    
+    // Common
+    loading: 'लोड हो रहा है...',
+    error: 'त्रुटि',
+    retry: 'फिर से प्रयास करें',
+    save: 'सेव करें',
+    cancel: 'रद्द करें',
+    offline: 'ऑफलाइन',
+    online: 'ऑनलाइन',
+    noData: 'डेटा उपलब्ध नहीं है',
+    clearChat: 'चैट साफ करें',
+    cropTips: 'फसल सुझाव',
+    
+    // Nepal specific
+    province: 'प्रदेश',
+    district: 'जिला',
+    village: 'गांव',
+    ward: 'वार्ड',
+    municipality: 'नगरपालिका',
+    ruralMunicipality: 'ग्रामीण नगरपालिका',
     metropolitanCity: 'महानगरपालिका',
     subMetropolitanCity: 'उपमहानगरपालिका',
   },
