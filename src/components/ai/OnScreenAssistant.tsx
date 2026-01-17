@@ -451,8 +451,18 @@ export function OnScreenAssistant({ isFullScreen: isEmbeddedFullScreen = false, 
         ];
       }
 
-      const response = await supabase.functions.invoke('ai-farm-assistant', {
-        body: {
+      // Use fetch directly for proper SSE streaming support
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/ai-farm-assistant`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({
           messages: [
             ...messages.filter(m => !m.isAnalyzing).map(m => ({ 
               role: m.role, 
@@ -465,24 +475,25 @@ export function OnScreenAssistant({ isFullScreen: isEmbeddedFullScreen = false, 
           ],
           language,
           hasImage: !!imageToSend
-        }
+        })
       });
 
-      if (response.error) throw response.error;
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
 
       // Handle streaming response with real-time UI updates
       let fullResponse = '';
       
       // Add empty assistant message that we'll update as we stream
-      const streamingMsgId = Date.now();
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: '',
         timestamp: new Date()
       }]);
       
-      if (response.data && typeof response.data.getReader === 'function') {
-        const reader = response.data.getReader();
+      if (response.body) {
+        const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let textBuffer = '';
 
@@ -529,23 +540,6 @@ export function OnScreenAssistant({ isFullScreen: isEmbeddedFullScreen = false, 
             }
           }
         }
-      } else if (response.data) {
-        // Non-streaming response
-        fullResponse = typeof response.data === 'string' 
-          ? response.data 
-          : response.data.response || response.data.content || JSON.stringify(response.data);
-        
-        // Update the message with full response
-        setMessages(prev => {
-          const updated = [...prev];
-          if (updated.length > 0) {
-            updated[updated.length - 1] = {
-              ...updated[updated.length - 1],
-              content: fullResponse
-            };
-          }
-          return updated;
-        });
       }
 
       // If no response received, show error message
