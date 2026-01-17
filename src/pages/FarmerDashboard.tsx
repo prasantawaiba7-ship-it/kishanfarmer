@@ -11,6 +11,7 @@ import Footer from "@/components/layout/Footer";
 import { AIAssistant } from "@/components/ai/AIAssistant";
 import { KrishiMitraBar } from "@/components/ai/KrishiMitraBar";
 import { OfflineDataViewer } from "@/components/farmer/OfflineDataViewer";
+import CropCalendar from "@/components/farmer/CropCalendar";
 import { LanguageSelector } from "@/components/farmer/LanguageSelector";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -64,7 +65,7 @@ const cropStages: { value: CropStage; label: string }[] = [
 ];
 
 const FarmerDashboard = () => {
-  const [activeTab, setActiveTab] = useState<"plots" | "capture" | "history" | "offline">("plots");
+  const [activeTab, setActiveTab] = useState<"plots" | "capture" | "history" | "offline" | "calendar">("plots");
   const [isAddPlotOpen, setIsAddPlotOpen] = useState(false);
   const [selectedPlot, setSelectedPlot] = useState<string>("");
   const [selectedStage, setSelectedStage] = useState<CropStage>("vegetative");
@@ -282,6 +283,7 @@ const FarmerDashboard = () => {
               {[
                 { id: "plots", label: t('myPlots'), icon: MapPin },
                 { id: "capture", label: "Capture", icon: Camera },
+                { id: "calendar", label: "बाली पात्रो", icon: Calendar },
                 { id: "history", label: t('history'), icon: History },
                 { id: "offline", label: "Offline", icon: WifiOff },
               ].map((tab) => (
@@ -627,6 +629,12 @@ const FarmerDashboard = () => {
                         </CardContent>
                       </Card>
                     )}
+                  </div>
+                )}
+
+                {activeTab === "calendar" && (
+                  <div className="space-y-4">
+                    <CropCalendar />
                   </div>
                 )}
 
