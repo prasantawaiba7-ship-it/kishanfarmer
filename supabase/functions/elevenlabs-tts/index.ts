@@ -5,6 +5,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Detect if text contains significant Devanagari (Nepali/Hindi) script
+function containsDevanagari(text: string): boolean {
+  const devanagariPattern = /[\u0900-\u097F]/g;
+  const matches = text.match(devanagariPattern);
+  const nonWhitespace = text.replace(/\s/g, '').length;
+  return matches ? (matches.length / nonWhitespace) > 0.1 : false;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -28,13 +36,17 @@ serve(async (req) => {
       );
     }
 
-    // Voice selection based on language
-    // For Nepali/Hindi: Use Lily (warm multilingual female voice that handles Devanagari well)
+    // Detect if text contains Devanagari script (Nepali/Hindi)
+    const hasDevanagari = containsDevanagari(text);
+    const isNepaliContent = language === 'ne' || language === 'hi' || hasDevanagari;
+    
+    // Voice selection based on language AND content detection
+    // For Nepali/Hindi content: Use Lily (warm multilingual female voice that handles Devanagari well)
     // For English: Use Sarah (natural female voice)
     let selectedVoiceId = voiceId;
     if (!selectedVoiceId) {
-      if (language === 'ne' || language === 'hi') {
-        // Lily - works well with Nepali/Hindi (multilingual)
+      if (isNepaliContent) {
+        // Lily - excellent for Nepali/Hindi/Devanagari text (multilingual v2)
         selectedVoiceId = "pFZP5JQG7iQjIQuC4Bku";
       } else {
         // Sarah - warm English voice
@@ -42,7 +54,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Generating TTS for text length: ${text.length}, voice: ${selectedVoiceId}, language: ${language || 'auto'}`);
+    console.log(`[TTS] Generating speech - length: ${text.length}, voice: ${selectedVoiceId}, language: ${language || 'auto'}, hasDevanagari: ${hasDevanagari}`);
 
     const response = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}?output_format=mp3_44100_128`,
@@ -56,11 +68,11 @@ serve(async (req) => {
           text,
           model_id: "eleven_multilingual_v2", // Supports 29 languages including Nepali
           voice_settings: {
-            stability: 0.6, // Slightly higher for clearer Nepali pronunciation
+            stability: isNepaliContent ? 0.65 : 0.5, // Higher stability for clearer Nepali pronunciation
             similarity_boost: 0.75,
-            style: 0.2, // Lower for more natural speech
+            style: 0.15, // Lower for more natural speech
             use_speaker_boost: true,
-            speed: 0.95, // Slightly slower for clearer Nepali
+            speed: isNepaliContent ? 0.9 : 1.0, // Slightly slower for clearer Nepali
           },
         }),
       }
@@ -68,10 +80,9 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("ElevenLabs API error:", response.status, errorText);
+      console.error("[TTS] ElevenLabs API error:", response.status, errorText);
 
       // IMPORTANT: Return 200 so the frontend can gracefully fall back to browser TTS
-      // without the request being treated as a hard failure.
       return new Response(
         JSON.stringify({
           ok: false,
@@ -87,6 +98,7 @@ serve(async (req) => {
     }
 
     const audioBuffer = await response.arrayBuffer();
+    console.log(`[TTS] Success - audio size: ${audioBuffer.byteLength} bytes`);
 
     return new Response(audioBuffer, {
       headers: {
@@ -95,7 +107,7 @@ serve(async (req) => {
       },
     });
   } catch (error: unknown) {
-    console.error("TTS error:", error);
+    console.error("[TTS] Error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
     return new Response(
       JSON.stringify({ error: message }),
