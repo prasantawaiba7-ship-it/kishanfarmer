@@ -754,7 +754,7 @@ export function OnScreenAssistant({ isFullScreen: isEmbeddedFullScreen = false, 
     try {
       // Generate styled HTML for the chat
       const dateStr = format(new Date(), 'yyyy-MM-dd');
-      const title = language === 'ne' ? 'किसान साथी कुराकानी' : language === 'hi' ? 'किसान साथी बातचीत' : 'Kisan Sathi Chat';
+      const title = language === 'ne' ? 'Farmer Gpt कुराकानी' : language === 'hi' ? 'Farmer Gpt बातचीत' : 'Farmer Gpt Chat';
       
       const html = `
 <!DOCTYPE html>
@@ -845,7 +845,7 @@ export function OnScreenAssistant({ isFullScreen: isEmbeddedFullScreen = false, 
               </div>
               <div>
                 <h1 className="font-bold text-lg sm:text-xl text-white">
-                  {language === 'ne' ? 'किसान साथी AI' : language === 'hi' ? 'किसान साथी AI' : 'Kisan Sathi AI'}
+                  {language === 'ne' ? 'Farmer Gpt' : language === 'hi' ? 'Farmer Gpt' : 'Farmer Gpt'}
                 </h1>
                 <p className="text-xs sm:text-sm text-white/80">
                   {language === 'ne' ? 'नेपाली वा English मा सोध्नुहोस्' : language === 'hi' ? 'नेपाली, हिन्दी या English में पूछें' : 'Ask in Nepali or English'}
@@ -977,10 +977,10 @@ export function OnScreenAssistant({ isFullScreen: isEmbeddedFullScreen = false, 
                   </h2>
                   <p className="text-muted-foreground mb-6 text-sm sm:text-base leading-relaxed">
                     {language === 'ne' 
-                      ? 'म किसान साथी AI। तपाईंको बालीनालीका प्रश्नहरू नेपाली वा English मा लेखेर वा बोलेर सोध्नुहोस्।' 
+                      ? 'म Farmer Gpt। तपाईंको बालीनालीका प्रश्नहरू नेपाली वा English मा लेखेर वा बोलेर सोध्नुहोस्।' 
                       : language === 'hi'
-                      ? 'मैं किसान साथी AI। अपने खेती के सवाल नेपाली, हिन्दी या English में लिखकर या बोलकर पूछें।'
-                      : "I'm Kisan Sathi AI. Ask your farming questions in Nepali or English by typing or speaking."}
+                      ? 'मैं Farmer Gpt। अपने खेती के सवाल नेपाली, हिन्दी या English में लिखकर या बोलकर पूछें।'
+                      : "I'm Farmer Gpt. Ask your farming questions in Nepali or English by typing or speaking."}
                   </p>
                   
                   {/* Quick Action Buttons */}

@@ -537,7 +537,7 @@ I've saved your crop image. I'll analyze it when you're back online.
               latitude: plot.latitude || 20.5937,
               longitude: plot.longitude || 78.9629,
               areaHectares: plot.area_hectares || 2,
-              state: plot.state || 'India',
+              state: plot.state || 'Nepal',
               district: plot.district || '',
               season: plot.season || 'Kharif',
               previousCrop: plot.crop_type

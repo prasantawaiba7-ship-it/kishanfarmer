@@ -193,8 +193,12 @@ const FarmerDashboard = () => {
                     className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
                     onClick={() => navigate('/farmer/profile')}
                   >
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                      <User className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {profile?.avatar_url ? (
+                        <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
+                      )}
                     </div>
                     <div className="min-w-0">
                       <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">
@@ -220,7 +224,7 @@ const FarmerDashboard = () => {
                 <p className="text-muted-foreground text-xs sm:text-sm">
                   {profile?.village && `${profile.village}, `}
                   {profile?.district && `${profile.district}, `}
-                  {profile?.state || 'India'}
+                  {profile?.state || 'Nepal'}
                 </p>
               </div>
             </motion.div>
