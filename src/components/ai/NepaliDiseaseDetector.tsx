@@ -592,19 +592,22 @@ export function NepaliDiseaseDetector() {
     }
   };
 
+  const [isDownloading, setIsDownloading] = useState(false);
+
   const downloadReport = async () => {
     if (!result) return;
-
+    
+    setIsDownloading(true);
     const cropLabel = CROP_TYPES.find(c => c.value === selectedCrop)?.label || 'बाली';
     
     try {
-      // Prepare data for the new unified PDF endpoint with geolocation
+      // Prepare data for the PDF endpoint
       const reportData = {
         crop_name: cropLabel,
         disease_name: result.detectedIssue,
         confidence: result.confidence,
         severity: result.severity,
-        farmer_location: locationName || '', // Auto-populated from geolocation
+        farmer_location: locationName || '',
         symptoms_keypoints: result.symptoms || [],
         recommended_chemicals: result.recommended_chemicals || [],
         organic_treatment: result.organic_treatment || (result.organicTreatment ? {
@@ -625,22 +628,33 @@ export function NepaliDiseaseDetector() {
 
       if (error) throw error;
 
-      // Open HTML report in new window for printing
-      const blob = new Blob([data], { type: 'text/html' });
+      // Create HTML blob and download as file
+      const blob = new Blob([data], { type: 'text/html; charset=utf-8' });
+      const fileName = `कृषि-रिपोर्ट-${cropLabel}-${new Date().toLocaleDateString('ne-NP').replace(/\//g, '-')}.html`;
+      
+      // Create download link
       const url = URL.createObjectURL(blob);
-      const win = window.open(url, '_blank');
-      if (win) {
-        win.onload = () => {
-          setTimeout(() => win.print(), 500);
-        };
-      }
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: '✅ रिपोर्ट डाउनलोड भयो!',
+        description: 'फाइल तपाईंको डिभाइसमा सेभ भयो।',
+      });
     } catch (error) {
       console.error('PDF generation error:', error);
       toast({
-        title: 'रिपोर्ट बनाउन असफल',
-        description: 'कृपया पुनः प्रयास गर्नुहोस्',
+        title: 'माफ गर्नुहोस्, रिपोर्ट डाउनलोड हुन सकेन',
+        description: 'कृपया फेरि प्रयास गर्नुहोस्।',
         variant: 'destructive'
       });
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -690,12 +704,46 @@ export function NepaliDiseaseDetector() {
     return text;
   };
 
-  // Share functions with enhanced report
+  // Share functions with enhanced report - using simple wa.me link (no API)
   const handleShareWhatsApp = () => {
     if (!result) return;
-    const text = generateReportShareText();
-    const encodedText = encodeURIComponent(text);
-    window.open(`https://wa.me/?text=${encodedText}`, '_blank');
+    
+    try {
+      const text = generateReportShareText();
+      const encodedText = encodeURIComponent(text);
+      
+      // Use simple WhatsApp share URL (works on both mobile and desktop)
+      const whatsappUrl = `https://wa.me/?text=${encodedText}`;
+      
+      // Try to open WhatsApp
+      const newWindow = window.open(whatsappUrl, '_blank');
+      
+      // Check if popup was blocked
+      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+        // Fallback: try direct location change on mobile
+        if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+          window.location.href = whatsappUrl;
+        } else {
+          toast({
+            title: 'WhatsApp खोल्न सकिएन',
+            description: 'कृपया popup blocker बन्द गर्नुहोस् वा रिपोर्ट डाउनलोड गरेर manually share गर्नुहोस्।',
+            variant: 'destructive'
+          });
+        }
+      } else {
+        toast({
+          title: '✅ WhatsApp खुल्यो',
+          description: 'रिपोर्ट पठाउन तयार छ।',
+        });
+      }
+    } catch (error) {
+      console.error('WhatsApp share error:', error);
+      toast({
+        title: 'WhatsApp बाट पठाउन समस्या आयो',
+        description: 'कृपया रिपोर्ट डाउनलोड गरेर manually share गर्नुहोस्।',
+        variant: 'destructive'
+      });
+    }
   };
 
   // Share to specific WhatsApp contact (for officers)
@@ -1190,11 +1238,21 @@ export function NepaliDiseaseDetector() {
                       {/* Primary Download Button - Easy Access */}
                       <Button 
                         onClick={downloadReport} 
+                        disabled={isDownloading}
                         className="w-full h-12 text-base bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                         size="lg"
                       >
-                        <Download className="w-5 h-5 mr-2" />
-                        📥 रिपोर्ट डाउनलोड गर्नुहोस्
+                        {isDownloading ? (
+                          <>
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            डाउनलोड हुँदैछ...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-5 h-5 mr-2" />
+                            📥 रिपोर्ट डाउनलोड गर्नुहोस्
+                          </>
+                        )}
                       </Button>
 
                       {/* Share buttons - Responsive Grid */}
