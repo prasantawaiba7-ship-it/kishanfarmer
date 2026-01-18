@@ -14,6 +14,7 @@ interface UseTextToSpeechOptions {
 const languageMap: Record<string, string> = {
   en: "en-US",
   ne: "ne-NP",
+  hi: "hi-IN",
   tamang: "ne-NP",
   newar: "ne-NP",
   maithili: "hi-IN",
@@ -21,8 +22,19 @@ const languageMap: Record<string, string> = {
   rai: "ne-NP",
 };
 
-function cleanTextForSpeech(text: string): string {
-  return text
+// Detect if text contains significant Devanagari (Nepali/Hindi) script
+function containsDevanagari(text: string): boolean {
+  const devanagariPattern = /[\u0900-\u097F]/g;
+  const matches = text.match(devanagariPattern);
+  // If more than 10% of non-whitespace characters are Devanagari, consider it Nepali
+  const nonWhitespace = text.replace(/\s/g, '').length;
+  return matches ? (matches.length / nonWhitespace) > 0.1 : false;
+}
+
+function cleanTextForSpeech(text: string, language: string = 'en'): string {
+  const isNepali = language === 'ne' || language === 'hi' || containsDevanagari(text);
+  
+  let cleaned = text
     // markdown
     .replace(/\*\*([^*]+)\*\*/g, "$1")
     .replace(/\*([^*]+)\*/g, "$1")
@@ -36,14 +48,35 @@ function cleanTextForSpeech(text: string): string {
     .replace(/!{2,}/g, "!")
     .replace(/\.{3,}/g, ".")
     .replace(/^\s*[\?\!\.]+\s*$/gm, "")
-    .replace(/\s+[\?\!]+\s+/g, " ")
-    // emoji-to-words
-    .replace(/✅/g, "Good news: ")
-    .replace(/⚠️/g, "Warning: ")
-    .replace(/💡/g, "Tip: ")
-    .replace(/📴/g, "Offline mode: ")
-    // remove most emojis/symbols
-    .replace(/🔍|🌾|🍂|🐛|🥀|⚪|🌿|💊|🥇|🥈|🥉/g, "")
+    .replace(/\s+[\?\!]+\s+/g, " ");
+  
+  // Language-specific emoji replacements
+  if (isNepali) {
+    cleaned = cleaned
+      .replace(/✅/g, "राम्रो खबर: ")
+      .replace(/⚠️/g, "चेतावनी: ")
+      .replace(/💡/g, "सुझाव: ")
+      .replace(/📴/g, "अफलाइन: ")
+      .replace(/🔍/g, "")
+      .replace(/🌾/g, "")
+      .replace(/🍂/g, "")
+      .replace(/🐛/g, "")
+      .replace(/🥀/g, "")
+      .replace(/⚪/g, "")
+      .replace(/🌿/g, "जैविक: ")
+      .replace(/💊/g, "रासायनिक: ")
+      .replace(/🥇|🥈|🥉/g, "");
+  } else {
+    cleaned = cleaned
+      .replace(/✅/g, "Good news: ")
+      .replace(/⚠️/g, "Warning: ")
+      .replace(/💡/g, "Tip: ")
+      .replace(/📴/g, "Offline mode: ")
+      .replace(/🔍|🌾|🍂|🐛|🥀|⚪|🌿|💊|🥇|🥈|🥉/g, "");
+  }
+  
+  // Remove remaining emojis/symbols but PRESERVE Devanagari script (U+0900-U+097F)
+  cleaned = cleaned
     .replace(/[\u{1F600}-\u{1F64F}]/gu, "")
     .replace(/[\u{1F300}-\u{1F5FF}]/gu, "")
     .replace(/[\u{1F680}-\u{1F6FF}]/gu, "")
@@ -58,6 +91,8 @@ function cleanTextForSpeech(text: string): string {
     .replace(/\n{3,}/g, "\n\n")
     .replace(/[ ]{2,}/g, " ")
     .trim();
+    
+  return cleaned;
 }
 
 function isFemaleVoice(voice: SpeechSynthesisVoice): boolean {
@@ -293,7 +328,7 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}) {
     async (text: string, messageId?: string) => {
       stop();
 
-      const cleaned = cleanTextForSpeech(text);
+      const cleaned = cleanTextForSpeech(text, language);
       if (!cleaned || cleaned.length < 2) {
         onError?.("No text to speak");
         return;
