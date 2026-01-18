@@ -19,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Settings,
+  PlayCircle,
   Users,
   Languages,
   MessageSquare,
@@ -47,6 +48,7 @@ import { ActivityLogsViewer } from "@/components/admin/ActivityLogsViewer";
 import { UserManagement } from "@/components/admin/UserManagement";
 import { DiseaseAnalyticsDashboard } from "@/components/admin/DiseaseAnalyticsDashboard";
 import CropManager from "@/components/admin/CropManager";
+import CropTreatmentManager from "@/components/admin/CropTreatmentManager";
 import { OfficerManager } from "@/components/admin/OfficerManager";
 
 interface FarmerProfile {
@@ -402,6 +404,10 @@ const AdminDashboard = () => {
                   <Users className="h-4 w-4" />
                   <span className="hidden sm:inline">Officers</span>
                 </TabsTrigger>
+                <TabsTrigger value="treatments" className="flex items-center gap-2">
+                  <PlayCircle className="h-4 w-4" />
+                  <span className="hidden sm:inline">उपचार</span>
+                </TabsTrigger>
               </TabsList>
 
               {/* Overview Tab */}
@@ -672,6 +678,11 @@ const AdminDashboard = () => {
 
               <TabsContent value="officers">
                 <OfficerManager />
+              </TabsContent>
+
+              {/* Treatments Tab */}
+              <TabsContent value="treatments">
+                <CropTreatmentManager />
               </TabsContent>
             </Tabs>
           </div>

@@ -426,6 +426,84 @@ export type Database = {
           },
         ]
       }
+      crop_treatments: {
+        Row: {
+          best_season: string | null
+          chemical_treatment: string | null
+          chemical_treatment_ne: string | null
+          cost_estimate: string | null
+          created_at: string
+          crop_name: string
+          disease_or_pest_name: string
+          disease_or_pest_name_ne: string | null
+          display_order: number | null
+          estimated_recovery_days: number | null
+          id: string
+          images: Json | null
+          is_active: boolean | null
+          organic_treatment: string | null
+          organic_treatment_ne: string | null
+          severity_level: string | null
+          treatment_steps: Json
+          treatment_steps_ne: Json | null
+          treatment_title: string
+          treatment_title_ne: string | null
+          updated_at: string
+          video_thumbnail_url: string | null
+          youtube_video_url: string | null
+        }
+        Insert: {
+          best_season?: string | null
+          chemical_treatment?: string | null
+          chemical_treatment_ne?: string | null
+          cost_estimate?: string | null
+          created_at?: string
+          crop_name: string
+          disease_or_pest_name: string
+          disease_or_pest_name_ne?: string | null
+          display_order?: number | null
+          estimated_recovery_days?: number | null
+          id?: string
+          images?: Json | null
+          is_active?: boolean | null
+          organic_treatment?: string | null
+          organic_treatment_ne?: string | null
+          severity_level?: string | null
+          treatment_steps?: Json
+          treatment_steps_ne?: Json | null
+          treatment_title: string
+          treatment_title_ne?: string | null
+          updated_at?: string
+          video_thumbnail_url?: string | null
+          youtube_video_url?: string | null
+        }
+        Update: {
+          best_season?: string | null
+          chemical_treatment?: string | null
+          chemical_treatment_ne?: string | null
+          cost_estimate?: string | null
+          created_at?: string
+          crop_name?: string
+          disease_or_pest_name?: string
+          disease_or_pest_name_ne?: string | null
+          display_order?: number | null
+          estimated_recovery_days?: number | null
+          id?: string
+          images?: Json | null
+          is_active?: boolean | null
+          organic_treatment?: string | null
+          organic_treatment_ne?: string | null
+          severity_level?: string | null
+          treatment_steps?: Json
+          treatment_steps_ne?: Json | null
+          treatment_title?: string
+          treatment_title_ne?: string | null
+          updated_at?: string
+          video_thumbnail_url?: string | null
+          youtube_video_url?: string | null
+        }
+        Relationships: []
+      }
       disease_detections: {
         Row: {
           analyzed_at: string
