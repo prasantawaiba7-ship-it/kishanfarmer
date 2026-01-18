@@ -1,12 +1,13 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
+import html2canvas from 'html2canvas';
 import { 
   Camera, Upload, X, Loader2, AlertTriangle, CheckCircle2, 
   Download, Leaf, Bug, Shield, Pill, BookOpen, ChevronDown,
   Droplets, ThermometerSun, Wind, Mic, MicOff, Share2, 
   MessageCircle, Phone, History, Calendar, Bell, Image, Grid3X3,
-  MapPin, Navigation
+  MapPin, Navigation, ImageDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -593,6 +594,8 @@ export function NepaliDiseaseDetector() {
   };
 
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDownloadingImage, setIsDownloadingImage] = useState(false);
+  const resultSectionRef = useRef<HTMLDivElement>(null);
 
   const downloadReport = async () => {
     if (!result) return;
@@ -655,6 +658,54 @@ export function NepaliDiseaseDetector() {
       });
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  // Download report as image using html2canvas
+  const downloadReportAsImage = async () => {
+    if (!result || !resultSectionRef.current) return;
+    
+    setIsDownloadingImage(true);
+    const cropLabel = CROP_TYPES.find(c => c.value === selectedCrop)?.label || 'बाली';
+    
+    try {
+      const canvas = await html2canvas(resultSectionRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2, // Higher quality
+        useCORS: true,
+        logging: false,
+      });
+      
+      // Convert canvas to blob
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          throw new Error('Failed to create image');
+        }
+        
+        const fileName = `कृषि-रिपोर्ट-${cropLabel}-${new Date().toLocaleDateString('ne-NP').replace(/\//g, '-')}.png`;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        toast({
+          title: '✅ इमेज डाउनलोड भयो!',
+          description: 'रिपोर्ट फोटोको रूपमा सेभ भयो।',
+        });
+        setIsDownloadingImage(false);
+      }, 'image/png', 1.0);
+    } catch (error) {
+      console.error('Image download error:', error);
+      toast({
+        title: 'माफ गर्नुहोस्, इमेज डाउनलोड हुन सकेन',
+        description: 'कृपया फेरि प्रयास गर्नुहोस्।',
+        variant: 'destructive'
+      });
+      setIsDownloadingImage(false);
     }
   };
 
@@ -1037,9 +1088,10 @@ export function NepaliDiseaseDetector() {
               <AnimatePresence>
                 {result && (
                   <motion.div
+                    ref={resultSectionRef}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="space-y-4"
+                    className="space-y-4 bg-background p-4 rounded-xl"
                   >
                     {/* Result Header */}
                     <div className={`p-4 rounded-xl border ${
@@ -1235,25 +1287,49 @@ export function NepaliDiseaseDetector() {
 
                     {/* Actions - Responsive Share & Download */}
                     <div className="space-y-3">
-                      {/* Primary Download Button - Easy Access */}
-                      <Button 
-                        onClick={downloadReport} 
-                        disabled={isDownloading}
-                        className="w-full h-12 text-base bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-                        size="lg"
-                      >
-                        {isDownloading ? (
-                          <>
-                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                            डाउनलोड हुँदैछ...
-                          </>
-                        ) : (
-                          <>
-                            <Download className="w-5 h-5 mr-2" />
-                            📥 रिपोर्ट डाउनलोड गर्नुहोस्
-                          </>
-                        )}
-                      </Button>
+                      {/* Download Buttons - Two options */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {/* HTML Report Download */}
+                        <Button 
+                          onClick={downloadReport} 
+                          disabled={isDownloading}
+                          className="h-12 text-base bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                          size="lg"
+                        >
+                          {isDownloading ? (
+                            <>
+                              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                              डाउनलोड हुँदैछ...
+                            </>
+                          ) : (
+                            <>
+                              <Download className="w-5 h-5 mr-2" />
+                              📄 HTML रिपोर्ट
+                            </>
+                          )}
+                        </Button>
+
+                        {/* Image Download Button */}
+                        <Button 
+                          onClick={downloadReportAsImage} 
+                          disabled={isDownloadingImage}
+                          variant="outline"
+                          className="h-12 text-base border-2 border-primary/30 hover:bg-primary/10"
+                          size="lg"
+                        >
+                          {isDownloadingImage ? (
+                            <>
+                              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                              इमेज बन्दैछ...
+                            </>
+                          ) : (
+                            <>
+                              <ImageDown className="w-5 h-5 mr-2" />
+                              🖼️ फोटो सेभ गर्नु
+                            </>
+                          )}
+                        </Button>
+                      </div>
 
                       {/* Share buttons - Responsive Grid */}
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
