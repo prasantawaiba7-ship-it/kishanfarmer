@@ -97,6 +97,8 @@ export function OnScreenAssistant({ isFullScreen: isEmbeddedFullScreen = false, 
   const [assistantLang, setAssistantLang] = useState(globalLanguage);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [sessionId] = useState(() => crypto.randomUUID());
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -105,6 +107,65 @@ export function OnScreenAssistant({ isFullScreen: isEmbeddedFullScreen = false, 
   
   // Use external ref if provided, otherwise use internal
   const inputRefToUse = externalInputRef || internalInputRef;
+
+  // Load chat history for logged-in users
+  useEffect(() => {
+    const loadChatHistory = async () => {
+      if (!profile?.id) return;
+      
+      setIsLoadingHistory(true);
+      try {
+        const { data, error } = await supabase
+          .from('ai_chat_history')
+          .select('*')
+          .eq('farmer_id', profile.id)
+          .order('created_at', { ascending: false })
+          .limit(50);
+        
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          // Convert to Message format and reverse to show oldest first
+          const loadedMessages: Message[] = data.reverse().map(msg => ({
+            role: msg.role as 'user' | 'assistant',
+            content: msg.content,
+            timestamp: new Date(msg.created_at),
+            imageUrl: msg.image_url || undefined
+          }));
+          setMessages(loadedMessages);
+        }
+      } catch (error) {
+        console.error('Failed to load chat history:', error);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+
+    loadChatHistory();
+  }, [profile?.id]);
+
+  // Save message to database
+  const saveMessageToDb = useCallback(async (
+    role: 'user' | 'assistant', 
+    content: string, 
+    imageUrl?: string
+  ) => {
+    if (!profile?.id || !content) return;
+    
+    try {
+      await supabase.from('ai_chat_history').insert({
+        farmer_id: profile.id,
+        session_id: sessionId,
+        role,
+        content,
+        image_url: imageUrl || null,
+        language: assistantLang,
+        message_type: imageUrl ? 'image' : 'text'
+      });
+    } catch (error) {
+      console.error('Failed to save message:', error);
+    }
+  }, [profile?.id, sessionId, assistantLang]);
   
   // Use local language for assistant
   const language = assistantLang;
@@ -392,6 +453,9 @@ export function OnScreenAssistant({ isFullScreen: isEmbeddedFullScreen = false, 
     }
     setIsLoading(true);
 
+    // Save user message to database
+    saveMessageToDb('user', userMessage.content, imageToSend || undefined);
+
     // Check if offline - queue message and show cached response
     if (!isOnline) {
       // Queue the message for later sending
@@ -477,6 +541,9 @@ export function OnScreenAssistant({ isFullScreen: isEmbeddedFullScreen = false, 
           };
           setMessages(prev => [...prev, resultMessage]);
           setIsLoading(false);
+
+          // Save assistant response to database
+          saveMessageToDb('assistant', resultMessage.content);
 
           // Auto-speak the result
           if (autoSpeak && ttsSupported) {
@@ -619,6 +686,11 @@ export function OnScreenAssistant({ isFullScreen: isEmbeddedFullScreen = false, 
         });
       }
 
+      // Save assistant response to database
+      if (fullResponse) {
+        saveMessageToDb('assistant', fullResponse);
+      }
+
       // Auto-speak the response immediately for faster experience
       if (autoSpeak && ttsSupported && fullResponse) {
         speak(fullResponse);
@@ -642,9 +714,21 @@ export function OnScreenAssistant({ isFullScreen: isEmbeddedFullScreen = false, 
     setIsFullScreen(false);
   };
 
-  const clearChat = () => {
+  const clearChat = async () => {
     setMessages([]);
     stop();
+    
+    // Clear chat history from database for this user
+    if (profile?.id) {
+      try {
+        await supabase
+          .from('ai_chat_history')
+          .delete()
+          .eq('farmer_id', profile.id);
+      } catch (error) {
+        console.error('Failed to clear chat history:', error);
+      }
+    }
   };
 
   const retryLastMessage = () => {
