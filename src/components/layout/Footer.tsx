@@ -11,7 +11,7 @@ const Footer = () => {
               <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
                 <Leaf className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="font-bold text-xl text-background">कृषि मित्र</span>
+              <span className="font-bold text-xl text-background">Farmer Gpt</span>
             </Link>
             <p className="text-background/70 max-w-sm leading-relaxed">
               नेपाली किसानहरूको लागि AI-संचालित बाली निगरानी र रोग पहिचान प्रणाली।
@@ -83,7 +83,7 @@ const Footer = () => {
         <div className="border-t border-background/10 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
             <p className="text-sm text-background/60">
-              © २०२४ कृषि मित्र। नेपाली किसानहरूको लागि बनाइएको।
+              © २०२४ Farmer Gpt। नेपाली किसानहरूको लागि बनाइएको।
             </p>
             <div className="flex gap-6">
               <a href="#" className="text-sm text-background/60 hover:text-background">

@@ -42,7 +42,7 @@ While I can't analyze images offline, here are common signs to look for:
 
   'weather': `🌤️ **Offline Weather Tips**
 
-**General Seasonal Guidance (India):**
+**General Seasonal Guidance (Nepal):**
 
 **Kharif (June-October):**
 • Monsoon crops: Rice, Cotton, Maize
