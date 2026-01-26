@@ -9,9 +9,12 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, BookOpen, Loader2 } from 'lucide-react';
+import { useCrops } from '@/hooks/useCrops';
+import { Plus, Edit, Trash2, BookOpen, Loader2, Search, Filter } from 'lucide-react';
 import { GuideSection, SECTION_LABELS } from '@/hooks/useCropGuides';
 
 interface CropGuide {
@@ -30,10 +33,15 @@ const SECTIONS = Object.keys(SECTION_LABELS) as GuideSection[];
 
 export function CropGuidesManager() {
   const { toast } = useToast();
+  const { activeCrops } = useCrops();
   const [guides, setGuides] = useState<CropGuide[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingGuide, setEditingGuide] = useState<CropGuide | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterCrop, setFilterCrop] = useState<string>('all');
+  const [filterSection, setFilterSection] = useState<string>('all');
+  
   const [formData, setFormData] = useState({
     crop_name: '',
     section: 'introduction' as GuideSection,
@@ -81,7 +89,7 @@ export function CropGuidesManager() {
     } else {
       setEditingGuide(null);
       setFormData({
-        crop_name: '',
+        crop_name: activeCrops[0]?.name_ne || '',
         section: 'introduction',
         title: '',
         title_ne: '',
@@ -120,7 +128,7 @@ export function CropGuidesManager() {
       if (error) {
         toast({ title: 'Error', description: 'Failed to update guide', variant: 'destructive' });
       } else {
-        toast({ title: 'Updated!', description: 'Guide updated successfully' });
+        toast({ title: 'सफल!', description: 'गाइड अपडेट भयो' });
         setIsDialogOpen(false);
         fetchGuides();
       }
@@ -141,7 +149,7 @@ export function CropGuidesManager() {
       if (error) {
         toast({ title: 'Error', description: 'Failed to create guide', variant: 'destructive' });
       } else {
-        toast({ title: 'Created!', description: 'Guide created successfully' });
+        toast({ title: 'सफल!', description: 'नयाँ गाइड थपियो' });
         setIsDialogOpen(false);
         fetchGuides();
       }
@@ -149,14 +157,14 @@ export function CropGuidesManager() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this guide?')) return;
+    if (!confirm('यो गाइड मेटाउने हो?')) return;
 
     const { error } = await supabase.from('crop_guides').delete().eq('id', id);
 
     if (error) {
       toast({ title: 'Error', description: 'Failed to delete guide', variant: 'destructive' });
     } else {
-      toast({ title: 'Deleted!', description: 'Guide deleted successfully' });
+      toast({ title: 'मेटाइयो!', description: 'गाइड मेटाइयो' });
       fetchGuides();
     }
   };
@@ -174,8 +182,21 @@ export function CropGuidesManager() {
     }
   };
 
+  // Get unique crop names from guides
+  const uniqueCrops = [...new Set(guides.map(g => g.crop_name))];
+
+  // Filter guides
+  const filteredGuides = guides.filter(guide => {
+    const matchesSearch = guide.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         guide.crop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (guide.title_ne && guide.title_ne.includes(searchQuery));
+    const matchesCrop = filterCrop === 'all' || guide.crop_name === filterCrop;
+    const matchesSection = filterSection === 'all' || guide.section === filterSection;
+    return matchesSearch && matchesCrop && matchesSection;
+  });
+
   // Group by crop name
-  const groupedGuides = guides.reduce((acc, guide) => {
+  const groupedGuides = filteredGuides.reduce((acc, guide) => {
     if (!acc[guide.crop_name]) {
       acc[guide.crop_name] = [];
     }
@@ -193,36 +214,59 @@ export function CropGuidesManager() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold flex items-center gap-2">
-          <BookOpen className="h-5 w-5" />
-          Crop Guides ({guides.length})
-        </h2>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <BookOpen className="h-5 w-5" />
+            खेती गाइड ({guides.length})
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {uniqueCrops.length} बालीमा गाइड उपलब्ध
+          </p>
+        </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => handleOpenDialog()}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Guide
+              नयाँ गाइड
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editingGuide ? 'Edit Guide' : 'Add New Guide'}</DialogTitle>
+              <DialogTitle>{editingGuide ? 'गाइड सम्पादन' : 'नयाँ गाइड थप्नुहोस्'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Crop Name *</Label>
-                  <Input
-                    value={formData.crop_name}
-                    onChange={(e) => setFormData({ ...formData, crop_name: e.target.value })}
-                    placeholder="e.g., धान, गहुँ"
-                    required
-                  />
+                  <Label>बाली छान्नुहोस् *</Label>
+                  <Select 
+                    value={formData.crop_name} 
+                    onValueChange={(v) => setFormData({ ...formData, crop_name: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="बाली छान्नुहोस्" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {activeCrops.map((crop) => (
+                        <SelectItem key={crop.id} value={crop.name_ne}>
+                          {crop.name_ne} ({crop.name_en})
+                        </SelectItem>
+                      ))}
+                      {/* Also allow custom entry */}
+                      <SelectItem value="__custom__">+ नयाँ बाली</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {formData.crop_name === '__custom__' && (
+                    <Input
+                      placeholder="बालीको नाम लेख्नुहोस्"
+                      onChange={(e) => setFormData({ ...formData, crop_name: e.target.value })}
+                    />
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label>Section *</Label>
+                  <Label>खण्ड (Section) *</Label>
                   <Select 
                     value={formData.section} 
                     onValueChange={(v) => setFormData({ ...formData, section: v as GuideSection })}
@@ -251,7 +295,7 @@ export function CropGuidesManager() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Title (नेपाली)</Label>
+                  <Label>शीर्षक (नेपाली)</Label>
                   <Input
                     value={formData.title_ne}
                     onChange={(e) => setFormData({ ...formData, title_ne: e.target.value })}
@@ -264,23 +308,25 @@ export function CropGuidesManager() {
                 <Textarea
                   value={formData.content}
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  rows={4}
+                  rows={5}
                   required
+                  placeholder="Detailed guide content in English..."
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Content (नेपाली)</Label>
+                <Label>विवरण (नेपाली)</Label>
                 <Textarea
                   value={formData.content_ne}
                   onChange={(e) => setFormData({ ...formData, content_ne: e.target.value })}
-                  rows={4}
+                  rows={5}
+                  placeholder="नेपालीमा विस्तृत गाइड..."
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Display Order</Label>
+                  <Label>क्रम (Display Order)</Label>
                   <Input
                     type="number"
                     value={formData.display_order}
@@ -292,77 +338,152 @@ export function CropGuidesManager() {
                     checked={formData.is_active}
                     onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
                   />
-                  <Label>Active</Label>
+                  <Label>सक्रिय</Label>
                 </div>
               </div>
 
               <Button type="submit" className="w-full">
-                {editingGuide ? 'Update Guide' : 'Create Guide'}
+                {editingGuide ? 'अपडेट गर्नुहोस्' : 'थप्नुहोस्'}
               </Button>
             </form>
           </DialogContent>
         </Dialog>
       </div>
 
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input 
+            placeholder="खोज्नुहोस्..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={filterCrop} onValueChange={setFilterCrop}>
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue placeholder="बाली" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">सबै बाली</SelectItem>
+            {uniqueCrops.map(crop => (
+              <SelectItem key={crop} value={crop}>{crop}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterSection} onValueChange={setFilterSection}>
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue placeholder="खण्ड" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">सबै खण्ड</SelectItem>
+            {SECTIONS.map(s => (
+              <SelectItem key={s} value={s}>
+                {SECTION_LABELS[s].icon} {SECTION_LABELS[s].ne}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-primary">{uniqueCrops.length}</p>
+            <p className="text-xs text-muted-foreground">बालीहरू</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-primary">{guides.length}</p>
+            <p className="text-xs text-muted-foreground">गाइड विषय</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-green-600">{guides.filter(g => g.is_active).length}</p>
+            <p className="text-xs text-muted-foreground">सक्रिय</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold text-orange-600">{guides.filter(g => !g.is_active).length}</p>
+            <p className="text-xs text-muted-foreground">निष्क्रिय</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Guides List */}
       {Object.keys(groupedGuides).length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center text-muted-foreground">
-            No guides yet. Add your first guide!
+            <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>कुनै गाइड फेला परेन।</p>
+            <p className="text-sm">नयाँ गाइड थप्नुहोस्!</p>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {Object.entries(groupedGuides).map(([cropName, cropGuides]) => (
             <Card key={cropName}>
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg">{cropName}</CardTitle>
+                <CardTitle className="text-lg flex items-center justify-between">
+                  <span>🌾 {cropName}</span>
+                  <Badge variant="secondary">{cropGuides.length} विषय</Badge>
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Section</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Order</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {cropGuides.map((guide) => (
-                      <TableRow key={guide.id}>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {SECTION_LABELS[guide.section]?.icon} {SECTION_LABELS[guide.section]?.ne}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{guide.title}</p>
-                            {guide.title_ne && <p className="text-sm text-muted-foreground">{guide.title_ne}</p>}
-                          </div>
-                        </TableCell>
-                        <TableCell>{guide.display_order}</TableCell>
-                        <TableCell>
-                          <Switch
-                            checked={guide.is_active}
-                            onCheckedChange={() => handleToggleActive(guide)}
-                          />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button size="sm" variant="outline" onClick={() => handleOpenDialog(guide)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button size="sm" variant="destructive" onClick={() => handleDelete(guide.id)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                <ScrollArea className="w-full">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-32">खण्ड</TableHead>
+                        <TableHead>शीर्षक</TableHead>
+                        <TableHead className="w-16">क्रम</TableHead>
+                        <TableHead className="w-20">स्थिति</TableHead>
+                        <TableHead className="text-right w-24">कार्य</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {cropGuides.map((guide) => (
+                        <TableRow key={guide.id}>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {SECTION_LABELS[guide.section]?.icon} {SECTION_LABELS[guide.section]?.ne}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium line-clamp-1">{guide.title_ne || guide.title}</p>
+                              {guide.title_ne && (
+                                <p className="text-xs text-muted-foreground line-clamp-1">{guide.title}</p>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>{guide.display_order}</TableCell>
+                          <TableCell>
+                            <Switch
+                              checked={guide.is_active}
+                              onCheckedChange={() => handleToggleActive(guide)}
+                            />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button size="icon" variant="ghost" onClick={() => handleOpenDialog(guide)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="text-destructive" onClick={() => handleDelete(guide.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
               </CardContent>
             </Card>
           ))}
