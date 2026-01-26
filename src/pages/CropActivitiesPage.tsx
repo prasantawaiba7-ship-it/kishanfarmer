@@ -37,7 +37,7 @@ const CropActivitiesPage = () => {
       <div className="min-h-screen bg-background">
         <Header />
 
-        <main className="pt-20 sm:pt-24 pb-20">
+        <main className="pt-20 sm:pt-24 pb-28">
           <div className="container mx-auto px-4">
             <CropActivitiesLog />
           </div>
