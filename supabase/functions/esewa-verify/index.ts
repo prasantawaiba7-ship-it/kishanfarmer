@@ -71,9 +71,14 @@ serve(async (req) => {
     }
 
     // Verify with eSewa transaction status API
-    const merchantCode = Deno.env.get("ESEWA_MERCHANT_CODE") || "EPAYTEST";
-    const verifyUrl = `https://rc-epay.esewa.com.np/api/epay/transaction/status/?product_code=${merchantCode}&total_amount=${payment.amount_npr}&transaction_uuid=${transaction_uuid}`;
-    
+    // ALWAYS use EPAYTEST for sandbox mode to match initiation
+    const isSandbox = Deno.env.get("ESEWA_SANDBOX") !== "false";
+    const merchantCode = isSandbox ? "EPAYTEST" : (Deno.env.get("ESEWA_MERCHANT_CODE") || "EPAYTEST");
+    const baseUrl = isSandbox 
+      ? "https://rc-epay.esewa.com.np" 
+      : "https://epay.esewa.com.np";
+    const verifyUrl = `${baseUrl}/api/epay/transaction/status/?product_code=${merchantCode}&total_amount=${payment.amount_npr}&transaction_uuid=${transaction_uuid}`;
+    logStep("eSewa mode", { isSandbox, merchantCode });
     logStep("Calling eSewa verification API", { url: verifyUrl });
 
     const verifyResponse = await fetch(verifyUrl);
