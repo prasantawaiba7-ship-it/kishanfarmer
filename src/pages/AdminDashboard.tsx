@@ -37,6 +37,8 @@ import {
   Bug,
   Leaf,
   TrendingUp,
+  MapPin,
+  LeafyGreen,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SubscriptionAnalytics } from "@/components/admin/SubscriptionAnalytics";
@@ -53,6 +55,8 @@ import { CropGuidesManager } from "@/components/admin/CropGuidesManager";
 import CropTreatmentManager from "@/components/admin/CropTreatmentManager";
 import { OfficerManager } from "@/components/admin/OfficerManager";
 import { MarketPricesManager } from "@/components/admin/MarketPricesManager";
+import { CropsManager } from "@/components/admin/CropsManager";
+import { LocationsManager } from "@/components/admin/LocationsManager";
 interface FarmerProfile {
   id: string;
   user_id: string;
@@ -419,6 +423,14 @@ const AdminDashboard = () => {
                   <TrendingUp className="h-4 w-4" />
                   <span className="hidden sm:inline">बजार</span>
                 </TabsTrigger>
+                <TabsTrigger value="crops-master" className="flex items-center gap-2">
+                  <LeafyGreen className="h-4 w-4" />
+                  <span className="hidden sm:inline">बाली Master</span>
+                </TabsTrigger>
+                <TabsTrigger value="locations" className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  <span className="hidden sm:inline">स्थान</span>
+                </TabsTrigger>
               </TabsList>
 
               {/* Overview Tab */}
@@ -704,6 +716,16 @@ const AdminDashboard = () => {
               {/* Market Prices Tab */}
               <TabsContent value="market">
                 <MarketPricesManager />
+              </TabsContent>
+
+              {/* Crops Master Tab */}
+              <TabsContent value="crops-master">
+                <CropsManager />
+              </TabsContent>
+
+              {/* Locations Tab */}
+              <TabsContent value="locations">
+                <LocationsManager />
               </TabsContent>
             </Tabs>
           </div>

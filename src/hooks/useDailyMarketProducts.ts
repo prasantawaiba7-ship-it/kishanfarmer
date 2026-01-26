@@ -16,6 +16,20 @@ export interface DailyMarketProduct {
   district: string | null;
   source: string | null;
   created_at: string;
+  // New fields
+  province_id: number | null;
+  district_id_fk: number | null;
+  local_level_id: number | null;
+  ward_number: number | null;
+  crop_id: number | null;
+}
+
+interface FilterParams {
+  provinceId?: number | null;
+  districtId?: number | null;
+  localLevelId?: number | null;
+  wardNumber?: number | null;
+  cropId?: number | null;
 }
 
 export function useDailyMarketProducts() {
@@ -23,15 +37,18 @@ export function useDailyMarketProducts() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [latestDate, setLatestDate] = useState<string | null>(null);
+
+  // Legacy filters (for backward compatibility)
   const [districts, setDistricts] = useState<string[]>([]);
   const [crops, setCrops] = useState<string[]>([]);
-
-  // Filters
   const [selectedDistrict, setSelectedDistrict] = useState<string>('all');
   const [selectedCrop, setSelectedCrop] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'name' | 'price-low' | 'price-high'>('name');
 
-  const fetchProducts = useCallback(async () => {
+  // New location-based filters
+  const [filterParams, setFilterParams] = useState<FilterParams>({});
+
+  const fetchProducts = useCallback(async (params?: FilterParams) => {
     setIsLoading(true);
     setError(null);
 
@@ -54,17 +71,41 @@ export function useDailyMarketProducts() {
       const targetDate = dateData[0].date;
       setLatestDate(targetDate);
 
-      // Fetch products for that date
+      // Build query with filters
       let query = supabase
         .from('daily_market_products')
         .select('*')
         .eq('date', targetDate);
 
-      if (selectedDistrict !== 'all') {
+      // Apply new location filters
+      const activeParams = params || filterParams;
+      
+      if (activeParams.provinceId) {
+        query = query.eq('province_id', activeParams.provinceId);
+      }
+      
+      if (activeParams.districtId) {
+        query = query.eq('district_id_fk', activeParams.districtId);
+      }
+      
+      if (activeParams.localLevelId) {
+        query = query.eq('local_level_id', activeParams.localLevelId);
+      }
+      
+      if (activeParams.wardNumber) {
+        query = query.eq('ward_number', activeParams.wardNumber);
+      }
+      
+      if (activeParams.cropId) {
+        query = query.eq('crop_id', activeParams.cropId);
+      }
+
+      // Legacy filters (if no new filters, use old ones)
+      if (!activeParams.districtId && selectedDistrict !== 'all') {
         query = query.eq('district', selectedDistrict);
       }
 
-      if (selectedCrop !== 'all') {
+      if (!activeParams.cropId && selectedCrop !== 'all') {
         query = query.eq('crop_name', selectedCrop);
       }
 
@@ -84,7 +125,7 @@ export function useDailyMarketProducts() {
 
       setProducts(sortedData as DailyMarketProduct[]);
 
-      // Fetch distinct districts and crops for filters
+      // Fetch distinct districts and crops for legacy filters
       const { data: allData } = await supabase
         .from('daily_market_products')
         .select('district, crop_name')
@@ -102,10 +143,16 @@ export function useDailyMarketProducts() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedDistrict, selectedCrop, sortBy]);
+  }, [filterParams, selectedDistrict, selectedCrop, sortBy]);
 
   useEffect(() => {
     fetchProducts();
+  }, [fetchProducts]);
+
+  // Update filter params and refetch
+  const updateFilters = useCallback((params: FilterParams) => {
+    setFilterParams(params);
+    fetchProducts(params);
   }, [fetchProducts]);
 
   return {
@@ -113,6 +160,7 @@ export function useDailyMarketProducts() {
     isLoading,
     error,
     latestDate,
+    // Legacy
     districts,
     crops,
     selectedDistrict,
@@ -121,6 +169,9 @@ export function useDailyMarketProducts() {
     setSelectedCrop,
     sortBy,
     setSortBy,
-    refresh: fetchProducts,
+    // New
+    filterParams,
+    updateFilters,
+    refresh: () => fetchProducts(filterParams),
   };
 }
