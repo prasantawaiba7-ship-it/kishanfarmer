@@ -74,9 +74,12 @@ serve(async (req) => {
     }
     logStep("Payment record created");
 
-    // eSewa configuration
-    const merchantCode = Deno.env.get("ESEWA_MERCHANT_CODE") || "EPAYTEST";
-    const secretKey = Deno.env.get("ESEWA_SECRET_KEY") || "8gBm/:&EnhH.1/q";
+    // eSewa configuration - ALWAYS use EPAYTEST for sandbox
+    // In production, set ESEWA_SANDBOX=false and configure real merchant credentials
+    const isSandbox = Deno.env.get("ESEWA_SANDBOX") !== "false";
+    const merchantCode = isSandbox ? "EPAYTEST" : (Deno.env.get("ESEWA_MERCHANT_CODE") || "EPAYTEST");
+    const secretKey = isSandbox ? "8gBm/:&EnhH.1/q" : (Deno.env.get("ESEWA_SECRET_KEY") || "8gBm/:&EnhH.1/q");
+    logStep("eSewa mode", { isSandbox, merchantCode });
     
     // eSewa requires amount in paisa for test, but NPR for production
     // For test environment, we use the amount directly
