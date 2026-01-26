@@ -27,10 +27,7 @@ export function UserBar() {
           className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
           onClick={() => navigate("/")}
         >
-          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground text-lg">🌾</span>
-          </div>
-          <span className="hidden sm:inline text-sm font-semibold text-foreground">HUNCHA</span>
+          <span className="text-sm font-semibold text-foreground">Kisan Sathi</span>
         </div>
 
         {/* Center: User info */}
