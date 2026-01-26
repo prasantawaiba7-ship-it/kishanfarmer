@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useDailyMarketProducts, DailyMarketProduct } from '@/hooks/useDailyMarketProducts';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,8 +9,10 @@ import { RefreshCw, Calendar, MapPin, TrendingUp, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
+import { LocationFilters } from './LocationFilters';
 
 function ProductCard({ product }: { product: DailyMarketProduct }) {
+  // Display Nepali name first
   const displayName = product.crop_name_ne || product.crop_name;
   const marketName = product.market_name_ne || product.market_name;
 
@@ -37,7 +40,7 @@ function ProductCard({ product }: { product: DailyMarketProduct }) {
           )}
         </AspectRatio>
         <CardContent className="p-4 space-y-3">
-          {/* Crop Name */}
+          {/* Crop Name - Nepali first */}
           <h3 className="font-bold text-lg text-foreground line-clamp-1">
             {displayName}
           </h3>
@@ -105,18 +108,34 @@ export function DailyMarketSection() {
     isLoading,
     error,
     latestDate,
-    districts,
-    crops,
-    selectedDistrict,
-    setSelectedDistrict,
-    selectedCrop,
-    setSelectedCrop,
     sortBy,
     setSortBy,
+    updateFilters,
     refresh,
   } = useDailyMarketProducts();
 
+  const [selectedCropId, setSelectedCropId] = useState<number | null>(null);
+
   const isToday = latestDate === format(new Date(), 'yyyy-MM-dd');
+
+  const handleFiltersChange = (filters: {
+    provinceId: number | null;
+    districtId: number | null;
+    localLevelId: number | null;
+    wardNumber: number | null;
+  }) => {
+    updateFilters({
+      ...filters,
+      cropId: selectedCropId,
+    });
+  };
+
+  const handleCropChange = (cropId: number | null) => {
+    setSelectedCropId(cropId);
+    updateFilters({
+      cropId,
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -150,37 +169,21 @@ export function DailyMarketSection() {
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <Select value={selectedCrop} onValueChange={setSelectedCrop}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="बाली छान्नुहोस्" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">सबै बाली</SelectItem>
-            {crops.map((crop) => (
-              <SelectItem key={crop} value={crop}>{crop}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      {/* Location Filters */}
+      <LocationFilters 
+        selectedCropId={selectedCropId}
+        onCropChange={handleCropChange}
+        onFiltersChange={handleFiltersChange}
+      />
 
-        <Select value={selectedDistrict} onValueChange={setSelectedDistrict}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="जिल्ला छान्नुहोस्" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">सबै जिल्ला</SelectItem>
-            {districts.map((district) => (
-              <SelectItem key={district} value={district}>{district}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
+      {/* Sort Filter */}
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-muted-foreground">क्रमबद्ध:</span>
         <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'name' | 'price-low' | 'price-high')}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[180px] bg-background">
             <SelectValue placeholder="क्रमबद्ध गर्नुहोस्" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-background border shadow-lg z-50">
             <SelectItem value="name">नाम (A-Z)</SelectItem>
             <SelectItem value="price-low">मूल्य (कम → धेरै)</SelectItem>
             <SelectItem value="price-high">मूल्य (धेरै → कम)</SelectItem>
@@ -212,7 +215,10 @@ export function DailyMarketSection() {
           <CardContent className="p-8 text-center">
             <Store className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
             <p className="text-muted-foreground">
-              आजको बजार मूल्य उपलब्ध छैन। कृपया भोलि फेरि जाँच गर्नुहोस्।
+              छानिएको स्थानका लागि बजार मूल्य उपलब्ध छैन।
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              कृपया अर्को स्थान छान्नुहोस् वा भोलि फेरि जाँच गर्नुहोस्।
             </p>
           </CardContent>
         </Card>
@@ -220,11 +226,16 @@ export function DailyMarketSection() {
 
       {/* Products Grid */}
       {!isLoading && !error && products.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        <>
+          <p className="text-sm text-muted-foreground">
+            {products.length} वटा उत्पादन फेला परे
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

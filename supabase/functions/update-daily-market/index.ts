@@ -5,25 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Sample product data - this can be replaced with real API/scraper later
-const SAMPLE_PRODUCTS = [
-  { crop_name: 'Tomato', crop_name_ne: 'गोलभेडा', unit: 'kg', base_price: 100 },
-  { crop_name: 'Potato', crop_name_ne: 'आलु', unit: 'kg', base_price: 50 },
-  { crop_name: 'Onion', crop_name_ne: 'प्याज', unit: 'kg', base_price: 75 },
-  { crop_name: 'Cabbage', crop_name_ne: 'बन्दा', unit: 'piece', base_price: 40 },
-  { crop_name: 'Cauliflower', crop_name_ne: 'काउली', unit: 'piece', base_price: 55 },
-  { crop_name: 'Carrot', crop_name_ne: 'गाजर', unit: 'kg', base_price: 65 },
-  { crop_name: 'Green Beans', crop_name_ne: 'सिमी', unit: 'kg', base_price: 80 },
-  { crop_name: 'Cucumber', crop_name_ne: 'काँक्रो', unit: 'kg', base_price: 55 },
-  { crop_name: 'Spinach', crop_name_ne: 'पालुङ्गो', unit: 'bundle', base_price: 30 },
-  { crop_name: 'Radish', crop_name_ne: 'मूला', unit: 'kg', base_price: 40 },
-  { crop_name: 'Chili', crop_name_ne: 'खुर्सानी', unit: 'kg', base_price: 125 },
-  { crop_name: 'Garlic', crop_name_ne: 'लसुन', unit: 'kg', base_price: 250 },
-  { crop_name: 'Ginger', crop_name_ne: 'अदुवा', unit: 'kg', base_price: 180 },
-  { crop_name: 'Brinjal', crop_name_ne: 'भण्टा', unit: 'kg', base_price: 60 },
-  { crop_name: 'Bitter Gourd', crop_name_ne: 'करेला', unit: 'kg', base_price: 70 },
-];
-
+// Product images mapping
 const PRODUCT_IMAGES: Record<string, string> = {
   'Tomato': 'https://images.unsplash.com/photo-1546470427-227c7369a9b0?w=400',
   'Potato': 'https://images.unsplash.com/photo-1518977676601-b53f82ber40a?w=400',
@@ -41,14 +23,6 @@ const PRODUCT_IMAGES: Record<string, string> = {
   'Brinjal': 'https://images.unsplash.com/photo-1635909096289-7fdc0d87df6f?w=400',
   'Bitter Gourd': 'https://images.unsplash.com/photo-1604977042946-1eecc30f269e?w=400',
 };
-
-const MARKETS = [
-  { name: 'Kalimati', name_ne: 'कालिमाटी', district: 'Kathmandu' },
-  { name: 'Balkhu', name_ne: 'बाल्खु', district: 'Kathmandu' },
-  { name: 'Dharan', name_ne: 'धरान', district: 'Sunsari' },
-  { name: 'Pokhara', name_ne: 'पोखरा', district: 'Kaski' },
-  { name: 'Biratnagar', name_ne: 'विराटनगर', district: 'Morang' },
-];
 
 // Generate random price variation
 function randomVariation(basePrice: number, variationPercent: number = 20): { min: number; max: number; avg: number } {
@@ -75,26 +49,104 @@ Deno.serve(async (req) => {
     
     console.log(`[update-daily-market] Starting daily market update for ${today}`);
     
-    // Generate products for each market
+    // Fetch crops from the crops master table
+    const { data: crops, error: cropsError } = await supabase
+      .from('crops')
+      .select('*')
+      .eq('is_active', true)
+      .order('display_order');
+    
+    if (cropsError) {
+      console.error('[update-daily-market] Error fetching crops:', cropsError);
+      throw cropsError;
+    }
+    
+    if (!crops || crops.length === 0) {
+      console.log('[update-daily-market] No active crops found');
+      return new Response(
+        JSON.stringify({ success: false, error: 'No active crops found' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Fetch districts with local levels for market locations
+    const { data: districts, error: districtsError } = await supabase
+      .from('districts')
+      .select(`
+        id,
+        name_ne,
+        name_en,
+        province_id,
+        provinces (id, name_ne, name_en)
+      `)
+      .order('display_order')
+      .limit(10);
+    
+    if (districtsError) {
+      console.error('[update-daily-market] Error fetching districts:', districtsError);
+    }
+    
+    // Base prices for different crop categories
+    const basePrices: Record<string, number> = {
+      'Tomato': 100,
+      'Potato': 50,
+      'Onion': 75,
+      'Cabbage': 40,
+      'Cauliflower': 55,
+      'Carrot': 65,
+      'Green Beans': 80,
+      'Cucumber': 55,
+      'Spinach': 30,
+      'Radish': 40,
+      'Chili': 125,
+      'Garlic': 250,
+      'Ginger': 180,
+      'Brinjal': 60,
+      'Bitter Gourd': 70,
+      'Pumpkin': 35,
+      'Bottle Gourd': 40,
+      'Okra': 90,
+      'Coriander': 25,
+      'Mustard Greens': 20,
+      'Rice': 85,
+      'Wheat': 45,
+      'Maize': 35,
+      'Apple': 200,
+      'Mango': 150,
+      'Banana': 80,
+      'Orange': 120,
+      'Lemon': 100,
+    };
+    
+    // Generate products for each district and crop
     const productsToUpsert = [];
     
-    for (const market of MARKETS) {
-      for (const product of SAMPLE_PRODUCTS) {
-        const prices = randomVariation(product.base_price);
+    const targetDistricts = districts || [
+      { id: null, name_ne: 'काठमाण्डौ', name_en: 'Kathmandu', province_id: 3 },
+    ];
+    
+    for (const district of targetDistricts) {
+      for (const crop of crops) {
+        const basePrice = basePrices[crop.name_en] || 50;
+        const prices = randomVariation(basePrice);
         
         productsToUpsert.push({
           date: today,
-          crop_name: product.crop_name,
-          crop_name_ne: product.crop_name_ne,
-          image_url: PRODUCT_IMAGES[product.crop_name] || null,
-          unit: product.unit,
+          crop_name: crop.name_en,
+          crop_name_ne: crop.name_ne,
+          image_url: crop.image_url || PRODUCT_IMAGES[crop.name_en] || null,
+          unit: crop.unit || 'kg',
           price_min: prices.min,
           price_max: prices.max,
           price_avg: prices.avg,
-          market_name: market.name,
-          market_name_ne: market.name_ne,
-          district: market.district,
+          market_name: district.name_en || 'General Market',
+          market_name_ne: district.name_ne || 'सामान्य बजार',
+          district: district.name_en || 'Kathmandu',
           source: 'auto_update',
+          // New location fields
+          province_id: district.province_id || null,
+          district_id_fk: district.id || null,
+          crop_id: crop.id,
         });
       }
     }
@@ -122,6 +174,8 @@ Deno.serve(async (req) => {
         message: `Updated ${productsToUpsert.length} products for ${today}`,
         date: today,
         productsCount: productsToUpsert.length,
+        cropsUsed: crops.length,
+        districtsUsed: targetDistricts.length,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
