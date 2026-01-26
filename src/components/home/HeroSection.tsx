@@ -1,7 +1,11 @@
-import { Sparkles } from "lucide-react";
+import { Sparkles, Leaf } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
 
 const HeroSection = () => {
+  const { profile, user } = useAuth();
+  const displayName = profile?.full_name || user?.email?.split("@")[0] || "";
+
   return (
     <section className="relative pt-20 pb-8 overflow-hidden hero-gradient">
       {/* Animated Background Elements */}
@@ -33,9 +37,21 @@ const HeroSection = () => {
             transition={{ duration: 0.5 }}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card mb-6"
           >
-            <Sparkles className="w-4 h-4 text-accent" />
-            <span className="text-sm font-medium text-foreground">Kisan Sathi</span>
+            <Leaf className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium text-foreground">किसान साथी</span>
           </motion.div>
+
+          {/* Welcome Message */}
+          {displayName && (
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="text-base text-primary font-medium mb-2"
+            >
+              🙏 स्वागत छ, {displayName}!
+            </motion.p>
+          )}
 
           {/* Main Heading */}
           <motion.h1

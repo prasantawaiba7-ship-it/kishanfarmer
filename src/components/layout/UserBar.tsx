@@ -49,23 +49,23 @@ export function UserBar() {
               <span className="hidden sm:inline text-xs">सेटिङ</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 bg-popover">
+          <DropdownMenuContent align="end" className="w-48 bg-popover z-50">
             <DropdownMenuItem onClick={() => navigate("/farmer")}>
               <Home className="w-4 h-4 mr-2" />
-              Dashboard
+              ड्यासबोर्ड
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/farmer/profile")}>
               <User className="w-4 h-4 mr-2" />
-              Profile
+              प्रोफाइल
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/subscription")}>
               <Crown className="w-4 h-4 mr-2" />
-              Subscription
+              सदस्यता
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={signOut} className="text-destructive">
               <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
+              साइन आउट
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
