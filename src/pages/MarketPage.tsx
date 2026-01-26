@@ -124,26 +124,27 @@ const MarketPage = () => {
         <main className="pt-20 sm:pt-24 pb-28">
           <div className="container mx-auto px-4">
             <div className="mb-6">
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Store className="h-6 w-6 text-primary" />
+              <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                <Store className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 बजार
               </h1>
-              <p className="text-muted-foreground">बजार भाउ हेर्नुहोस्, उब्जनी बेच्न list गर्नुहोस्</p>
+              <p className="text-sm text-muted-foreground">भाउ हेर्नुहोस्, उब्जनी बेच्नुहोस्</p>
             </div>
 
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
               <TabsList className="grid w-full grid-cols-3 mb-6">
-                <TabsTrigger value="browse" className="gap-2">
-                  <ShoppingCart className="h-4 w-4" />
-                  बजार
+                <TabsTrigger value="browse" className="gap-1 sm:gap-2 text-xs sm:text-sm">
+                  <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">उत्पादन</span>
+                  <span className="sm:hidden">बजार</span>
                 </TabsTrigger>
-                <TabsTrigger value="prices" className="gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  भाउ
+                <TabsTrigger value="prices" className="gap-1 sm:gap-2 text-xs sm:text-sm">
+                  <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  मूल्य
                 </TabsTrigger>
                 {user && (
-                  <TabsTrigger value="my" className="gap-2">
-                    <Package className="h-4 w-4" />
+                  <TabsTrigger value="my" className="gap-1 sm:gap-2 text-xs sm:text-sm">
+                    <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     मेरो ({myListings.length})
                   </TabsTrigger>
                 )}
@@ -158,10 +159,10 @@ const MarketPage = () => {
               <TabsContent value="prices">
                 <div className="space-y-4">
                   <Card className="bg-primary/5 border-primary/20">
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold mb-1">आजको बजार मूल्य</h3>
-                      <p className="text-sm text-muted-foreground">
-                        नजिकको हाट/मण्डीको अनुमानित मूल्य। वास्तविक मूल्य फरक हुन सक्छ।
+                    <CardContent className="p-3 sm:p-4">
+                      <h3 className="font-semibold mb-1 text-sm sm:text-base">आजको बजार मूल्य</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground">
+                        नजिकको हाट/मण्डीको अनुमानित मूल्य
                       </p>
                     </CardContent>
                   </Card>
@@ -229,17 +230,17 @@ const MarketPage = () => {
               <TabsContent value="my">
                 {!user ? (
                   <Card>
-                    <CardContent className="p-8 text-center text-muted-foreground">
-                      कृपया पहिला login गर्नुहोस्।
+                    <CardContent className="p-6 sm:p-8 text-center text-muted-foreground">
+                      कृपया login गर्नुहोस्।
                     </CardContent>
                   </Card>
                 ) : myListings.length === 0 ? (
                   <Card>
-                    <CardContent className="p-8 text-center">
-                      <Package className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-                      <h3 className="font-semibold mb-2">तपाईंको कुनै listing छैन</h3>
-                      <p className="text-muted-foreground mb-4">आफ्नो उब्जनी बेच्न list गर्नुहोस्</p>
-                      <Button onClick={() => setActiveTab('browse')}>
+                    <CardContent className="p-6 sm:p-8 text-center">
+                      <Package className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground/30 mx-auto mb-4" />
+                      <h3 className="font-semibold mb-2 text-sm sm:text-base">कुनै listing छैन</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground mb-4">उब्जनी बेच्न list गर्नुहोस्</p>
+                      <Button onClick={() => setActiveTab('browse')} size="sm">
                         नयाँ उत्पादन राख्ने
                       </Button>
                     </CardContent>
@@ -330,9 +331,10 @@ const MarketPage = () => {
                                 <Button 
                                   size="sm" 
                                   variant="outline"
+                                  className="text-xs"
                                   onClick={() => handleToggleActive(listing.id, listing.is_active)}
                                 >
-                                  {listing.is_active ? 'Deactivate' : 'Activate'}
+                                  {listing.is_active ? 'निष्क्रिय' : 'सक्रिय'}
                                 </Button>
                                 <Button 
                                   size="sm" 

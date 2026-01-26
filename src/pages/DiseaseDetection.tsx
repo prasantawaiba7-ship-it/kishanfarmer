@@ -24,14 +24,13 @@ export default function DiseaseDetection() {
         <Header />
         
         {/* pt-20 for header, pb-20 for UserBar */}
-        <main className="container mx-auto px-4 pt-20 pb-28 max-w-4xl">
+        <main className="container mx-auto px-4 pt-20 pb-32 max-w-4xl">
           <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold mb-3">
-              🌿 बाली रोग र कीरा पहिचान प्रणाली
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">
+              🌿 रोग र कीरा पहिचान
             </h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              फोटो अपलोड गरेर तपाईंको बालीको रोग वा कीरा पहिचान गर्नुहोस्। 
-              AI ले रोग/कीराको निदान, जैविक र रासायनिक उपचार, र रोकथामका उपायहरू सुझाव दिनेछ।
+            <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
+              फोटो अपलोड गर्नुहोस्, AI ले रोग/कीरा पत्ता लगाई उपचार सुझाव दिनेछ।
             </p>
           </div>
 
@@ -47,38 +46,37 @@ export default function DiseaseDetection() {
             </div>
           )}
 
-          {/* How to Use Section */}
-          <div className="mt-12 p-6 bg-muted/50 rounded-2xl">
-            <h2 className="text-xl font-semibold mb-4 text-center">
+          {/* How to Use Section - Simplified Steps */}
+          <div className="mt-12 p-4 sm:p-6 bg-muted/50 rounded-2xl">
+            <h2 className="text-lg sm:text-xl font-semibold mb-4 text-center">
               📖 कसरी प्रयोग गर्ने?
             </h2>
-            <div className="grid md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 sm:gap-4">
               {[
-                { step: '१', title: 'बाली छान्नुहोस्', desc: 'ड्रपडाउनबाट बालीको प्रकार छान्नुहोस्' },
-                { step: '२', title: 'फोटो लिनुहोस्', desc: 'प्रभावित पात/फल/कीराको नजिकबाट फोटो' },
-                { step: '३', title: 'अपलोड गर्नुहोस्', desc: 'क्यामेरा वा गेलेरीबाट फोटो अपलोड' },
-                { step: '४', title: 'विश्लेषण गर्नुहोस्', desc: 'AI ले रोग/कीरा पहिचान गर्नेछ' },
-                { step: '५', title: 'उपचार पाउनुहोस्', desc: 'जैविक र रासायनिक उपचार विधि' }
+                { step: '१', title: 'बाली छान्ने', desc: 'बाली प्रकार' },
+                { step: '२', title: 'फोटो खिच्ने', desc: 'रोगी पात/फल' },
+                { step: '३', title: 'अपलोड गर्ने', desc: 'फोटो हाल्ने' },
+                { step: '४', title: 'विश्लेषण', desc: 'AI जाँच' },
+                { step: '५', title: 'उपचार', desc: 'सुझाव पाउने' }
               ].map((item, i) => (
                 <div key={i} className="text-center">
-                  <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm sm:text-base">
                     {item.step}
                   </div>
-                  <h3 className="font-medium text-sm mb-1">{item.title}</h3>
-                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  <h3 className="font-medium text-xs sm:text-sm mb-0.5">{item.title}</h3>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">{item.desc}</p>
                 </div>
               ))}
             </div>
 
-            {/* Pest identification tips */}
-            <div className="mt-6 p-4 bg-orange-500/10 rounded-xl border border-orange-500/20">
-              <h3 className="font-medium mb-2 flex items-center gap-2">
-                🐛 कीरा पहिचानको लागि सुझावहरू:
+            {/* Pest identification tips - Simplified */}
+            <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-warning/10 rounded-xl border border-warning/20">
+              <h3 className="font-medium mb-2 flex items-center gap-2 text-sm sm:text-base">
+                🐛 राम्रो फोटोको लागि:
               </h3>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• कीराको नजिकबाट स्पष्ट फोटो लिनुहोस्</li>
-                <li>• क्षति भएको पात वा फलको फोटो राख्नुहोस्</li>
-                <li>• सकेसम्म दिनको उज्यालोमा फोटो खिच्नुहोस्</li>
+              <ul className="text-xs sm:text-sm text-muted-foreground space-y-1">
+                <li>• नजिकबाट स्पष्ट फोटो खिच्नुहोस्</li>
+                <li>• दिनको उज्यालोमा खिच्नुहोस्</li>
               </ul>
             </div>
           </div>

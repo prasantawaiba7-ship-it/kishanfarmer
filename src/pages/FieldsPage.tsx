@@ -134,18 +134,19 @@ const FieldsPage = () => {
           <div className="container mx-auto px-4">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h1 className="text-2xl font-bold flex items-center gap-2">
-                  <Mountain className="h-6 w-6 text-primary" />
+                <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                  <Mountain className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                   मेरो खेत
                 </h1>
-                <p className="text-muted-foreground">खेत, बाली र माटो परीक्षण व्यवस्थापन</p>
+                <p className="text-sm text-muted-foreground">खेत र बाली व्यवस्थापन</p>
               </div>
               
               <Dialog open={isAddFieldOpen} onOpenChange={setIsAddFieldOpen}>
                 <DialogTrigger asChild>
-                  <Button className="gap-2">
+                  <Button className="gap-1 sm:gap-2" size="sm">
                     <Plus className="h-4 w-4" />
-                    नयाँ खेत
+                    <span className="hidden sm:inline">नयाँ खेत</span>
+                    <span className="sm:hidden">थप्ने</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -217,7 +218,7 @@ const FieldsPage = () => {
             <div className="grid md:grid-cols-3 gap-6">
               {/* Fields List */}
               <div className="space-y-4">
-                <h2 className="font-semibold text-lg">खेतहरू ({fields.length})</h2>
+                <h2 className="font-semibold text-base sm:text-lg">खेतहरू ({fields.length})</h2>
                 
                 {fields.length === 0 ? (
                   <Card className="border-dashed">
@@ -282,11 +283,11 @@ const FieldsPage = () => {
               <div className="md:col-span-2 space-y-6">
                 {!selectedField ? (
                   <Card className="border-dashed">
-                    <CardContent className="p-12 text-center">
-                      <Leaf className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-                      <h3 className="font-semibold mb-2">खेत छान्नुहोस्</h3>
-                      <p className="text-muted-foreground">
-                        बायाँबाट खेत छान्नुहोस् वा नयाँ खेत थप्नुहोस्
+                    <CardContent className="p-8 sm:p-12 text-center">
+                      <Leaf className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground/30 mx-auto mb-4" />
+                      <h3 className="font-semibold mb-2 text-sm sm:text-base">खेत छान्नुहोस्</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground">
+                        बायाँबाट खेत छान्नुहोस्
                       </p>
                     </CardContent>
                   </Card>
