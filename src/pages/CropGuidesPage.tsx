@@ -7,15 +7,15 @@ const CropGuidesPage = () => {
   return (
     <>
       <Helmet>
-        <title>कृषि ज्ञान - Crop Guides | Farmer Gpt</title>
-        <meta name="description" content="Learn about different crops - soil preparation, sowing, fertilizers, pest control, and harvesting techniques." />
+        <title>खेती गाइड - Crop Guides | Kisan Sathi</title>
+        <meta name="description" content="नेपालमा विभिन्न बालीहरूको पूर्ण खेती गाइड - माटो तयारी, बिउ रोपाइँ, मल व्यवस्थापन, सिँचाइ, रोग नियन्त्रण, कटानी र भण्डारण।" />
       </Helmet>
 
       <div className="min-h-screen bg-background">
         <Header />
 
-        <main className="pt-20 sm:pt-24 pb-28">
-          <div className="container mx-auto px-4">
+        <main className="pt-20 sm:pt-24 pb-32">
+          <div className="container mx-auto px-4 max-w-6xl">
             <CropGuidesViewer />
           </div>
         </main>

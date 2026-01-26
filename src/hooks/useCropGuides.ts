@@ -2,7 +2,20 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from './useLanguage';
 
-export type GuideSection = 'introduction' | 'soil' | 'sowing' | 'fertilizer' | 'irrigation' | 'pests' | 'diseases' | 'harvest' | 'storage' | 'tips';
+export type GuideSection = 
+  | 'introduction' 
+  | 'climate' 
+  | 'soil' 
+  | 'land_preparation' 
+  | 'sowing' 
+  | 'fertilizer' 
+  | 'irrigation' 
+  | 'pests' 
+  | 'diseases' 
+  | 'harvest' 
+  | 'storage' 
+  | 'market' 
+  | 'tips';
 
 export interface CropGuide {
   id: string;
@@ -20,14 +33,17 @@ export interface CropGuide {
 
 export const SECTION_LABELS: Record<GuideSection, { en: string; ne: string; icon: string }> = {
   introduction: { en: 'Introduction', ne: 'परिचय', icon: '📖' },
+  climate: { en: 'Climate & Season', ne: 'जलवायु र मौसम', icon: '🌤️' },
   soil: { en: 'Soil Preparation', ne: 'माटो तयारी', icon: '🏔️' },
-  sowing: { en: 'Sowing', ne: 'बीउ रोप्ने', icon: '🌱' },
-  fertilizer: { en: 'Fertilizer', ne: 'मल व्यवस्थापन', icon: '🧪' },
+  land_preparation: { en: 'Land Preparation', ne: 'भूमि तयारी', icon: '🚜' },
+  sowing: { en: 'Sowing & Planting', ne: 'बिउ रोपाइँ', icon: '🌱' },
+  fertilizer: { en: 'Fertilizer Management', ne: 'मल व्यवस्थापन', icon: '🧪' },
   irrigation: { en: 'Irrigation', ne: 'सिँचाइ', icon: '💧' },
   pests: { en: 'Pest Control', ne: 'कीरा नियन्त्रण', icon: '🐛' },
   diseases: { en: 'Disease Management', ne: 'रोग व्यवस्थापन', icon: '🦠' },
-  harvest: { en: 'Harvesting', ne: 'कटनी', icon: '🌾' },
+  harvest: { en: 'Harvesting', ne: 'कटानी', icon: '🌾' },
   storage: { en: 'Storage', ne: 'भण्डारण', icon: '🏠' },
+  market: { en: 'Market & Pricing', ne: 'बजार र मूल्य', icon: '💰' },
   tips: { en: 'Tips & Tricks', ne: 'सुझाव', icon: '💡' },
 };
 
