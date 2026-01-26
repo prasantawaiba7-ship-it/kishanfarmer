@@ -18,11 +18,9 @@ const Header = () => {
     { href: "/disease-detection", label: "रोग पहिचान", shortLabel: "रोग", icon: Camera },
     { href: "/fields", label: "मेरो खेत", shortLabel: "खेत", icon: Mountain },
     { href: "/market", label: "बजार", shortLabel: "बजार", icon: Store },
-    { href: "/guides", label: "कृषि ज्ञान", shortLabel: "ज्ञान", icon: Book },
     { href: "/activities", label: "कृषि कार्य", shortLabel: "कार्य", icon: Calendar },
     { href: "/expert-directory", label: "विशेषज्ञ", shortLabel: "विशेषज्ञ", icon: Phone },
     { href: "/krishi-mitra", label: "AI सहायक", shortLabel: "AI", icon: Cloud },
-    { href: "/subscription", label: "सदस्यता", shortLabel: "सदस्यता", icon: Crown },
     // Show Admin only to admin users
     ...(isAdmin() ? [{ href: "/admin", label: "Admin", shortLabel: "Admin", icon: Shield }] : []),
   ];
