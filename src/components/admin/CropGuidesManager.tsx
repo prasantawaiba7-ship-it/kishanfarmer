@@ -20,13 +20,18 @@ import { GuideSection, SECTION_LABELS } from '@/hooks/useCropGuides';
 interface CropGuide {
   id: string;
   crop_name: string;
+  crop_id: number | null;
   section: GuideSection;
   title: string;
   title_ne: string | null;
   content: string;
   content_ne: string | null;
   display_order: number;
+  step_number: number;
+  media_url: string | null;
+  version: number;
   is_active: boolean;
+  is_published: boolean;
 }
 
 const SECTIONS = Object.keys(SECTION_LABELS) as GuideSection[];
@@ -44,13 +49,17 @@ export function CropGuidesManager() {
   
   const [formData, setFormData] = useState({
     crop_name: '',
+    crop_id: null as number | null,
     section: 'introduction' as GuideSection,
     title: '',
     title_ne: '',
     content: '',
     content_ne: '',
     display_order: 0,
+    step_number: 0,
+    media_url: '',
     is_active: true,
+    is_published: true,
   });
 
   const fetchGuides = async () => {
@@ -78,25 +87,34 @@ export function CropGuidesManager() {
       setEditingGuide(guide);
       setFormData({
         crop_name: guide.crop_name,
+        crop_id: guide.crop_id,
         section: guide.section,
         title: guide.title,
         title_ne: guide.title_ne || '',
         content: guide.content,
         content_ne: guide.content_ne || '',
         display_order: guide.display_order,
+        step_number: guide.step_number || 0,
+        media_url: guide.media_url || '',
         is_active: guide.is_active,
+        is_published: guide.is_published,
       });
     } else {
       setEditingGuide(null);
+      const firstCrop = activeCrops[0];
       setFormData({
-        crop_name: activeCrops[0]?.name_ne || '',
+        crop_name: firstCrop?.name_ne || '',
+        crop_id: firstCrop?.id || null,
         section: 'introduction',
         title: '',
         title_ne: '',
         content: '',
         content_ne: '',
         display_order: 0,
+        step_number: 0,
+        media_url: '',
         is_active: true,
+        is_published: true,
       });
     }
     setIsDialogOpen(true);
@@ -115,13 +133,17 @@ export function CropGuidesManager() {
         .from('crop_guides')
         .update({
           crop_name: formData.crop_name,
+          crop_id: formData.crop_id,
           section: formData.section,
           title: formData.title,
           title_ne: formData.title_ne || null,
           content: formData.content,
           content_ne: formData.content_ne || null,
           display_order: formData.display_order,
+          step_number: formData.step_number,
+          media_url: formData.media_url || null,
           is_active: formData.is_active,
+          is_published: formData.is_published,
         })
         .eq('id', editingGuide.id);
 
@@ -137,13 +159,17 @@ export function CropGuidesManager() {
         .from('crop_guides')
         .insert({
           crop_name: formData.crop_name,
+          crop_id: formData.crop_id,
           section: formData.section,
           title: formData.title,
           title_ne: formData.title_ne || null,
           content: formData.content,
           content_ne: formData.content_ne || null,
           display_order: formData.display_order,
+          step_number: formData.step_number,
+          media_url: formData.media_url || null,
           is_active: formData.is_active,
+          is_published: formData.is_published,
         });
 
       if (error) {
@@ -243,7 +269,14 @@ export function CropGuidesManager() {
                   <Label>बाली छान्नुहोस् *</Label>
                   <Select 
                     value={formData.crop_name} 
-                    onValueChange={(v) => setFormData({ ...formData, crop_name: v })}
+                    onValueChange={(v) => {
+                      const selectedCrop = activeCrops.find(c => c.name_ne === v);
+                      setFormData({ 
+                        ...formData, 
+                        crop_name: v,
+                        crop_id: selectedCrop?.id || null
+                      });
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="बाली छान्नुहोस्" />
@@ -251,19 +284,16 @@ export function CropGuidesManager() {
                     <SelectContent>
                       {activeCrops.map((crop) => (
                         <SelectItem key={crop.id} value={crop.name_ne}>
-                          {crop.name_ne} ({crop.name_en})
+                          <div className="flex items-center gap-2">
+                            {crop.image_url && (
+                              <img src={crop.image_url} alt="" className="w-5 h-5 rounded object-cover" />
+                            )}
+                            {crop.name_ne} ({crop.name_en})
+                          </div>
                         </SelectItem>
                       ))}
-                      {/* Also allow custom entry */}
-                      <SelectItem value="__custom__">+ नयाँ बाली</SelectItem>
                     </SelectContent>
                   </Select>
-                  {formData.crop_name === '__custom__' && (
-                    <Input
-                      placeholder="बालीको नाम लेख्नुहोस्"
-                      onChange={(e) => setFormData({ ...formData, crop_name: e.target.value })}
-                    />
-                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>खण्ड (Section) *</Label>
@@ -333,12 +363,39 @@ export function CropGuidesManager() {
                     onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })}
                   />
                 </div>
-                <div className="flex items-center gap-2 pt-6">
+                <div className="space-y-2">
+                  <Label>चरण नम्बर (Step Number)</Label>
+                  <Input
+                    type="number"
+                    value={formData.step_number}
+                    onChange={(e) => setFormData({ ...formData, step_number: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>मिडिया URL (Optional)</Label>
+                <Input
+                  value={formData.media_url}
+                  onChange={(e) => setFormData({ ...formData, media_url: e.target.value })}
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
+
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2">
                   <Switch
                     checked={formData.is_active}
                     onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
                   />
                   <Label>सक्रिय</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={formData.is_published}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_published: checked })}
+                  />
+                  <Label>प्रकाशित</Label>
                 </div>
               </div>
 

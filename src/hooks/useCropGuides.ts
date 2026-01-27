@@ -20,13 +20,19 @@ export type GuideSection =
 export interface CropGuide {
   id: string;
   crop_name: string;
+  crop_id: number | null;
   section: GuideSection;
   title: string;
   title_ne: string | null;
   content: string;
   content_ne: string | null;
   display_order: number;
+  step_number: number;
+  media_url: string | null;
+  version: number;
   is_active: boolean;
+  is_published: boolean;
+  published_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -59,7 +65,9 @@ export function useCropGuides(cropName?: string) {
         .from('crop_guides')
         .select('*')
         .eq('is_active', true)
-        .order('display_order', { ascending: true });
+        .eq('is_published', true)
+        .order('display_order', { ascending: true })
+        .order('step_number', { ascending: true });
 
       if (cropName) {
         query = query.eq('crop_name', cropName);
@@ -68,10 +76,17 @@ export function useCropGuides(cropName?: string) {
       const { data, error } = await query;
 
       if (error) throw error;
-      setGuides((data as CropGuide[]) || []);
+      
+      // Cast section to GuideSection type
+      const typedData: CropGuide[] = (data || []).map(g => ({
+        ...g,
+        section: g.section as GuideSection
+      }));
+      
+      setGuides(typedData);
 
       // Extract unique crop names
-      const uniqueCrops = [...new Set((data || []).map((g: CropGuide) => g.crop_name))];
+      const uniqueCrops = [...new Set(typedData.map(g => g.crop_name))];
       setCrops(uniqueCrops);
     } catch (error) {
       console.error('Error fetching guides:', error);
