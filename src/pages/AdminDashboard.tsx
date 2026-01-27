@@ -40,6 +40,7 @@ import {
   MapPin,
   LeafyGreen,
   Store,
+  Image as ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SubscriptionAnalytics } from "@/components/admin/SubscriptionAnalytics";
@@ -60,6 +61,7 @@ import { CropsManager } from "@/components/admin/CropsManager";
 import { LocationsManager } from "@/components/admin/LocationsManager";
 import { DailyMarketPricesManager } from "@/components/admin/DailyMarketPricesManager";
 import { MarketsManager } from "@/components/admin/MarketsManager";
+import { CropPhotosManager } from "@/components/admin/CropPhotosManager";
 interface FarmerProfile {
   id: string;
   user_id: string;
@@ -442,6 +444,10 @@ const AdminDashboard = () => {
                   <Store className="h-4 w-4" />
                   <span className="hidden sm:inline">बजारहरू</span>
                 </TabsTrigger>
+                <TabsTrigger value="crop-photos" className="flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4" />
+                  <span className="hidden sm:inline">बाली फोटो</span>
+                </TabsTrigger>
               </TabsList>
 
               {/* Overview Tab */}
@@ -747,6 +753,11 @@ const AdminDashboard = () => {
               {/* Markets Tab */}
               <TabsContent value="markets">
                 <MarketsManager />
+              </TabsContent>
+
+              {/* Crop Photos Tab */}
+              <TabsContent value="crop-photos">
+                <CropPhotosManager />
               </TabsContent>
             </Tabs>
           </div>

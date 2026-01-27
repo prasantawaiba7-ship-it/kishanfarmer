@@ -7,6 +7,10 @@ export interface Crop {
   name_ne: string;
   category: string;
   image_url: string | null;
+  image_url_ai_suggested: string | null;
+  image_url_uploaded: string | null;
+  image_source: 'ai' | 'admin_upload' | 'external' | 'none' | null;
+  needs_image_review: boolean;
   unit: string;
   is_active: boolean;
   display_order: number;

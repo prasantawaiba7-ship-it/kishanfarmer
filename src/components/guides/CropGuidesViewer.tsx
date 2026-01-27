@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +11,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { useCrops } from '@/hooks/useCrops';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
-import { BookOpen, ChevronLeft, Search, Leaf, Loader2, ChevronDown, ChevronUp, Sparkles, MessageSquare, Volume2, VolumeX, ArrowRight } from 'lucide-react';
+import { BookOpen, ChevronLeft, Search, Leaf, Loader2, ChevronDown, ChevronUp, Sparkles, MessageSquare, Volume2, VolumeX, ArrowRight, ImageOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
@@ -18,6 +19,8 @@ import { MarketPriceSummaryCard } from './MarketPriceSummaryCard';
 import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 
 export function CropGuidesViewer() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { language } = useLanguage();
   const isMobile = useIsMobile();
   const { guides, crops: guideCrops, isLoading, getLocalizedContent } = useCropGuides();
@@ -263,12 +266,21 @@ export function CropGuidesViewer() {
                           src={imageUrl} 
                           alt={crop}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          onError={(e) => {
+                            // Hide broken images
+                            e.currentTarget.style.display = 'none';
+                            const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (fallback) fallback.style.display = 'flex';
+                          }}
                         />
-                      ) : (
+                      ) : null}
+                      <div 
+                        className={`absolute inset-0 flex items-center justify-center ${imageUrl ? 'hidden' : ''}`}
+                      >
                         <span className="text-5xl sm:text-6xl group-hover:scale-125 transition-transform duration-300 drop-shadow-lg">
                           {getCategoryEmoji(category)}
                         </span>
-                      )}
+                      </div>
                       {/* Gradient overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       <Badge 
@@ -316,9 +328,17 @@ export function CropGuidesViewer() {
           variant="ghost" 
           size="sm" 
           onClick={() => {
+            // Clear selection states
             setSelectedCrop(null);
             setAiSummary(null);
             setFarmerQuestion('');
+            stop(); // Stop any playing audio
+            
+            // If we came from a specific location, navigate back
+            // Otherwise just clear the selection (stay on same page)
+            if (location.state?.from) {
+              navigate(location.state.from, { replace: true });
+            }
           }}
           className="self-start -ml-2 h-10 px-3 touch-manipulation"
         >

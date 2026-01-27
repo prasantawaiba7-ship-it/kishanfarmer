@@ -688,10 +688,14 @@ export type Database = {
           created_at: string
           display_order: number | null
           id: number
+          image_source: Database["public"]["Enums"]["crop_image_source"] | null
           image_url: string | null
+          image_url_ai_suggested: string | null
+          image_url_uploaded: string | null
           is_active: boolean | null
           name_en: string
           name_ne: string
+          needs_image_review: boolean | null
           unit: string | null
           updated_at: string
         }
@@ -700,10 +704,14 @@ export type Database = {
           created_at?: string
           display_order?: number | null
           id?: number
+          image_source?: Database["public"]["Enums"]["crop_image_source"] | null
           image_url?: string | null
+          image_url_ai_suggested?: string | null
+          image_url_uploaded?: string | null
           is_active?: boolean | null
           name_en: string
           name_ne: string
+          needs_image_review?: boolean | null
           unit?: string | null
           updated_at?: string
         }
@@ -712,10 +720,14 @@ export type Database = {
           created_at?: string
           display_order?: number | null
           id?: number
+          image_source?: Database["public"]["Enums"]["crop_image_source"] | null
           image_url?: string | null
+          image_url_ai_suggested?: string | null
+          image_url_uploaded?: string | null
           is_active?: boolean | null
           name_en?: string
           name_ne?: string
+          needs_image_review?: boolean | null
           unit?: string | null
           updated_at?: string
         }
@@ -2185,6 +2197,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "farmer" | "field_official" | "authority" | "insurer"
+      crop_image_source: "ai" | "admin_upload" | "external" | "none"
       crop_stage:
         | "sowing"
         | "early_vegetative"
@@ -2354,6 +2367,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "farmer", "field_official", "authority", "insurer"],
+      crop_image_source: ["ai", "admin_upload", "external", "none"],
       crop_stage: [
         "sowing",
         "early_vegetative",
