@@ -368,42 +368,68 @@ export type Database = {
           content: string
           content_ne: string | null
           created_at: string
+          crop_id: number | null
           crop_name: string
           display_order: number | null
           id: string
           is_active: boolean
+          is_published: boolean | null
+          media_url: string | null
+          published_at: string | null
           section: string
+          step_number: number | null
           title: string
           title_ne: string | null
           updated_at: string
+          version: number | null
         }
         Insert: {
           content: string
           content_ne?: string | null
           created_at?: string
+          crop_id?: number | null
           crop_name: string
           display_order?: number | null
           id?: string
           is_active?: boolean
+          is_published?: boolean | null
+          media_url?: string | null
+          published_at?: string | null
           section: string
+          step_number?: number | null
           title: string
           title_ne?: string | null
           updated_at?: string
+          version?: number | null
         }
         Update: {
           content?: string
           content_ne?: string | null
           created_at?: string
+          crop_id?: number | null
           crop_name?: string
           display_order?: number | null
           id?: string
           is_active?: boolean
+          is_published?: boolean | null
+          media_url?: string | null
+          published_at?: string | null
           section?: string
+          step_number?: number | null
           title?: string
           title_ne?: string | null
           updated_at?: string
+          version?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "crop_guides_crop_id_fkey"
+            columns: ["crop_id"]
+            isOneToOne: false
+            referencedRelation: "crops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crop_photos: {
         Row: {
@@ -1149,6 +1175,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      guide_rules: {
+        Row: {
+          created_at: string | null
+          crop_id: number
+          guide_tag: string
+          id: string
+          is_active: boolean | null
+          priority: number | null
+          problem_type: string | null
+          severity: string | null
+          stage: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          crop_id: number
+          guide_tag: string
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          problem_type?: string | null
+          severity?: string | null
+          stage?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          crop_id?: number
+          guide_tag?: string
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          problem_type?: string | null
+          severity?: string | null
+          stage?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guide_rules_crop_id_fkey"
+            columns: ["crop_id"]
+            isOneToOne: false
+            referencedRelation: "crops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       listing_contacts: {
         Row: {

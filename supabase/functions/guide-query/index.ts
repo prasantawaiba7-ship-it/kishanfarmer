@@ -6,6 +6,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface CropInfo {
+  id: number;
+  name_ne: string;
+  name_en: string;
+  category: string | null;
+  image_url: string | null;
+}
+
 interface GuideSection {
   id: string;
   section: string;
@@ -14,6 +22,8 @@ interface GuideSection {
   content: string;
   content_ne: string | null;
   display_order: number;
+  step_number: number;
+  media_url: string | null;
 }
 
 serve(async (req) => {
@@ -22,11 +32,19 @@ serve(async (req) => {
   }
 
   try {
-    const { crop_name, stage, problem_type, question, language = 'ne' } = await req.json();
+    const { 
+      crop_id, 
+      crop_name, 
+      stage, 
+      problem_type, 
+      severity,
+      question, 
+      language = 'ne' 
+    } = await req.json();
 
-    if (!crop_name) {
+    if (!crop_id && !crop_name) {
       return new Response(
-        JSON.stringify({ error: "crop_name is required" }),
+        JSON.stringify({ error: "crop_id or crop_name is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -35,13 +53,68 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch all published guide sections for the crop
-    const { data: guides, error: guidesError } = await supabase
+    // Get crop info
+    let cropInfo: CropInfo | null = null;
+    let resolvedCropId = crop_id;
+
+    if (crop_id) {
+      const { data: cropData } = await supabase
+        .from("crops")
+        .select("id, name_ne, name_en, category, image_url")
+        .eq("id", crop_id)
+        .single();
+      cropInfo = cropData;
+    } else if (crop_name) {
+      // Find crop by name (Nepali or English)
+      const { data: cropData } = await supabase
+        .from("crops")
+        .select("id, name_ne, name_en, category, image_url")
+        .or(`name_ne.eq.${crop_name},name_en.ilike.${crop_name}`)
+        .limit(1)
+        .maybeSingle();
+      
+      if (cropData) {
+        cropInfo = cropData;
+        resolvedCropId = cropData.id;
+      }
+    }
+
+    // Check for matching guide rule (if crop has rules)
+    let matchedRule = null;
+    if (resolvedCropId) {
+      let ruleQuery = supabase
+        .from("guide_rules")
+        .select("*")
+        .eq("crop_id", resolvedCropId)
+        .eq("is_active", true)
+        .order("priority", { ascending: false });
+
+      // Add optional filters
+      if (stage) ruleQuery = ruleQuery.eq("stage", stage);
+      if (problem_type) ruleQuery = ruleQuery.eq("problem_type", problem_type);
+      if (severity) ruleQuery = ruleQuery.eq("severity", severity);
+
+      const { data: rules } = await ruleQuery.limit(1);
+      matchedRule = rules?.[0] || null;
+    }
+
+    // Fetch guide sections
+    // Prefer crop_id over crop_name for queries
+    let guidesQuery = supabase
       .from("crop_guides")
       .select("*")
-      .eq("crop_name", crop_name)
       .eq("is_active", true)
-      .order("display_order", { ascending: true });
+      .eq("is_published", true)
+      .order("display_order", { ascending: true })
+      .order("step_number", { ascending: true });
+
+    if (resolvedCropId) {
+      guidesQuery = guidesQuery.eq("crop_id", resolvedCropId);
+    } else if (crop_name) {
+      guidesQuery = guidesQuery.eq("crop_name", crop_name);
+    }
+
+    const { data: guides, error: guidesError } = await guidesQuery;
 
     if (guidesError) {
       console.error("[GUIDE-QUERY] Error fetching guides:", guidesError);
@@ -49,17 +122,23 @@ serve(async (req) => {
     }
 
     if (!guides || guides.length === 0) {
+      const notFoundMsg = language === 'ne' 
+        ? "यो बाली/अवस्थाका लागि गाइड उपलब्ध छैन। कृपया अर्को विकल्प छान्नुहोस् वा पछि फेरि प्रयास गर्नुहोस्।"
+        : "No guide available for this crop/stage. Please try another option or check back later.";
+      
       return new Response(
         JSON.stringify({ 
-          error: "No guides found for this crop",
-          sections: [],
-          summary: null 
+          error: notFoundMsg,
+          sections: {},
+          summary: null,
+          steps: null,
+          crop: cropInfo
         }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Group sections
+    // Group sections by type
     const sectionMap: Record<string, GuideSection[]> = {};
     for (const guide of guides) {
       if (!sectionMap[guide.section]) {
@@ -72,7 +151,7 @@ serve(async (req) => {
     const guideContent = guides.map(g => {
       const title = language === 'ne' && g.title_ne ? g.title_ne : g.title;
       const content = language === 'ne' && g.content_ne ? g.content_ne : g.content;
-      return `### ${title}\n${content}`;
+      return `### ${g.section}: ${title}\n${content}`;
     }).join("\n\n");
 
     // Generate AI summary using Lovable AI
@@ -85,26 +164,38 @@ serve(async (req) => {
           sections: sectionMap,
           raw_guides: guides,
           summary: null,
-          crop_name
+          steps: null,
+          crop: cropInfo,
+          matched_rule: matchedRule
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     // Build context-aware prompt
-    let userContext = `बाली: ${crop_name}`;
+    const cropDisplayName = cropInfo 
+      ? (language === 'ne' ? cropInfo.name_ne : cropInfo.name_en)
+      : crop_name;
+    
+    let userContext = `बाली: ${cropDisplayName}`;
     if (stage) userContext += `\nअवस्था: ${stage}`;
-    if (problem_type) userContext += `\nसमस्या: ${problem_type}`;
-    if (question) userContext += `\nकिसानको प्रश्न: ${question}`;
+    if (problem_type) userContext += `\nसमस्या प्रकार: ${problem_type}`;
+    if (severity) userContext += `\nगम्भीरता: ${severity}`;
+    if (question) userContext += `\n\nकिसानको प्रश्न: ${question}`;
+    else userContext += `\n\nयो बालीको सामान्य खेती सारांश दिनुहोस्।`;
 
     const systemPrompt = `तपाईं नेपाली किसानहरूको लागि कृषि सल्लाहकार हुनुहुन्छ। तलको गाइड सामग्रीबाट किसानलाई सजिलो भाषामा जवाफ दिनुहोस्।
 
+तपाईंले दिनुपर्ने जवाफ ढाँचा:
+1. पहिले २-३ वाक्यको संक्षिप्त परिचय
+2. त्यसपछि "के गर्नुहोस्:" शीर्षकमा क्रमबद्ध चरणहरू (१., २., ३....)
+3. अन्त्यमा "सावधानी:" शीर्षकमा १-२ महत्त्वपूर्ण कुराहरू
+
 नियमहरू:
 - सरल नेपाली भाषा प्रयोग गर्नुहोस्
-- चरणबद्ध निर्देशन दिनुहोस् (१., २., ३....)
-- महत्त्वपूर्ण सावधानी पनि उल्लेख गर्नुहोस्
-- २-३ अनुच्छेदमा संक्षिप्त जवाफ दिनुहोस्
-- bullet points प्रयोग गर्नुहोस्
+- छोटा वाक्य र bullet points प्रयोग गर्नुहोस्
+- तलको गाइड सामग्रीमा नभएको कुरा नबनाउनुहोस्
+- emoji प्रयोग नगर्नुहोस्
 
 गाइड सामग्री:
 ${guideContent}`;
@@ -121,8 +212,8 @@ ${guideContent}`;
           { role: "system", content: systemPrompt },
           { role: "user", content: userContext }
         ],
-        max_tokens: 800,
-        temperature: 0.7,
+        max_tokens: 1000,
+        temperature: 0.5,
       }),
     });
 
@@ -130,26 +221,16 @@ ${guideContent}`;
       const errorText = await aiResponse.text();
       console.error("[GUIDE-QUERY] AI error:", aiResponse.status, errorText);
       
-      if (aiResponse.status === 429) {
-        return new Response(
-          JSON.stringify({ 
-            sections: sectionMap,
-            raw_guides: guides,
-            summary: null,
-            error: "Rate limit exceeded, try again later",
-            crop_name
-          }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
       // Return guides without summary on AI error
       return new Response(
         JSON.stringify({
           sections: sectionMap,
           raw_guides: guides,
           summary: null,
-          crop_name
+          steps: null,
+          crop: cropInfo,
+          matched_rule: matchedRule,
+          error: aiResponse.status === 429 ? "Rate limit exceeded, try again later" : null
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -158,14 +239,25 @@ ${guideContent}`;
     const aiData = await aiResponse.json();
     const summary = aiData.choices?.[0]?.message?.content || null;
 
-    console.log("[GUIDE-QUERY] Success for crop:", crop_name);
+    // Parse steps from summary (extract numbered list items)
+    let steps: string[] = [];
+    if (summary) {
+      const stepsMatch = summary.match(/(\d+\.\s+[^\n]+)/g);
+      if (stepsMatch) {
+        steps = stepsMatch.map((s: string) => s.replace(/^\d+\.\s*/, '').trim());
+      }
+    }
+
+    console.log("[GUIDE-QUERY] Success for crop:", cropDisplayName, "sections:", Object.keys(sectionMap).length);
 
     return new Response(
       JSON.stringify({
         sections: sectionMap,
         raw_guides: guides,
         summary,
-        crop_name
+        steps,
+        crop: cropInfo,
+        matched_rule: matchedRule
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
