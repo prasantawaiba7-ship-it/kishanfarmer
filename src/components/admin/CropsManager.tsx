@@ -81,6 +81,10 @@ export function CropsManager() {
     const cropData = {
       ...formData,
       image_url: formData.image_url || null,
+      image_url_ai_suggested: null,
+      image_url_uploaded: null,
+      image_source: 'none' as const,
+      needs_image_review: true,
     };
 
     if (editingCrop) {
