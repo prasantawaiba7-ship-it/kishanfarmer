@@ -10,11 +10,12 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { useCrops } from '@/hooks/useCrops';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
-import { BookOpen, ChevronLeft, Search, Leaf, Loader2, ChevronDown, ChevronUp, Sparkles, MessageSquare } from 'lucide-react';
+import { BookOpen, ChevronLeft, Search, Leaf, Loader2, ChevronDown, ChevronUp, Sparkles, MessageSquare, Volume2, VolumeX, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import { MarketPriceSummaryCard } from './MarketPriceSummaryCard';
+import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 
 export function CropGuidesViewer() {
   const { language } = useLanguage();
@@ -32,6 +33,9 @@ export function CropGuidesViewer() {
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [showQueryForm, setShowQueryForm] = useState(false);
+  
+  // Text-to-Speech
+  const { speak, stop, isSpeaking } = useTextToSpeech();
 
   const filteredGuides = selectedCrop 
     ? guides.filter(g => g.crop_name === selectedCrop)
@@ -134,7 +138,7 @@ export function CropGuidesViewer() {
       console.error('Failed to generate summary:', err);
       toast.error(language === 'ne' ? 'सारांश बनाउन असफल' : 'Failed to generate summary');
     } finally {
-      setIsGeneratingSummary(false);
+    setIsGeneratingSummary(false);
     }
   };
 
@@ -142,6 +146,14 @@ export function CropGuidesViewer() {
     if (farmerQuestion.trim()) {
       generateAISummary(farmerQuestion.trim());
       setShowQueryForm(false);
+    }
+  };
+
+  const handleSpeakSummary = () => {
+    if (isSpeaking) {
+      stop();
+    } else if (aiSummary) {
+      speak(aiSummary, language === 'ne' ? 'ne-NP' : 'en-US');
     }
   };
 
@@ -184,37 +196,41 @@ export function CropGuidesViewer() {
         animate={{ opacity: 1 }}
         className="space-y-4 md:space-y-6"
       >
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-primary/10 text-primary">
-            <Leaf className="h-4 w-4 md:h-5 md:w-5" />
-            <span className="font-medium text-sm md:text-base">
+        {/* Header - Enhanced */}
+        <div className="text-center space-y-3 px-4">
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-primary/10 text-primary border border-primary/20"
+          >
+            <Leaf className="h-5 w-5" />
+            <span className="font-semibold text-sm md:text-base">
               {language === 'ne' ? 'खेती गाइड' : 'Farming Guide'}
             </span>
-          </div>
-          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold">
+          </motion.div>
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
             {language === 'ne' ? 'बाली छान्नुहोस्' : 'Select a Crop'}
           </h1>
-          <p className="text-muted-foreground text-sm md:text-base max-w-md mx-auto px-4">
+          <p className="text-muted-foreground text-sm md:text-base max-w-lg mx-auto">
             {language === 'ne' 
-              ? 'तपाईंले खेती गर्न चाहनुभएको बालीको पूर्ण गाइड हेर्नुहोस्'
-              : 'View complete farming guide for your chosen crop'}
+              ? 'तपाईंले खेती गर्न चाहनुभएको बालीको पूर्ण गाइड र AI सल्लाह पाउनुहोस्'
+              : 'Get complete guide and AI advice for your chosen crop'}
           </p>
         </div>
 
-        {/* Search - Full width on mobile */}
+        {/* Search - Enhanced */}
         <div className="relative w-full max-w-md mx-auto px-2 md:px-0">
           <Search className="absolute left-5 md:left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
             placeholder={language === 'ne' ? 'बाली खोज्नुहोस्...' : 'Search crops...'}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-11 md:h-10 text-base md:text-sm"
+            className="pl-10 h-12 md:h-11 text-base border-2 focus:border-primary shadow-sm"
           />
         </div>
 
-        {/* Crops Grid - Responsive columns */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 md:gap-4 px-1 md:px-0">
+        {/* Crops Grid - Enhanced Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 px-1 md:px-0">
           <AnimatePresence mode="popLayout">
             {filteredCrops.map((crop, index) => {
               const cropGuides = guides.filter(g => g.crop_name === crop);
@@ -224,46 +240,51 @@ export function CropGuidesViewer() {
               return (
                 <motion.div
                   key={crop}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ delay: index * 0.02 }}
+                  transition={{ delay: index * 0.03, duration: 0.3 }}
                 >
                   <Card 
-                    className="cursor-pointer group hover:shadow-lg hover:border-primary/50 transition-all duration-300 overflow-hidden active:scale-95 touch-manipulation"
+                    className="cursor-pointer group hover:shadow-xl hover:border-primary/50 hover:-translate-y-1 transition-all duration-300 overflow-hidden active:scale-95 touch-manipulation border-2"
                     onClick={() => {
                       setSelectedCrop(crop);
                       setActiveSection(null);
                       setExpandedSections(new Set());
                       setAiSummary(null);
                       setFarmerQuestion('');
+                      stop(); // Stop any playing audio
                     }}
                   >
-                    {/* Image or Emoji Header */}
-                    <div className="aspect-square sm:aspect-[4/3] bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center relative overflow-hidden">
+                    {/* Image or Emoji Header - Enhanced gradient */}
+                    <div className="aspect-[4/3] bg-gradient-to-br from-primary/10 via-primary/5 to-secondary/10 flex items-center justify-center relative overflow-hidden">
                       {imageUrl ? (
                         <img 
                           src={imageUrl} 
                           alt={crop}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         />
                       ) : (
-                        <span className="text-4xl sm:text-5xl group-hover:scale-110 transition-transform">
+                        <span className="text-5xl sm:text-6xl group-hover:scale-125 transition-transform duration-300 drop-shadow-lg">
                           {getCategoryEmoji(category)}
                         </span>
                       )}
+                      {/* Gradient overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       <Badge 
-                        variant="secondary" 
-                        className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 text-[10px] sm:text-xs px-1.5 py-0.5"
+                        className="absolute top-2 right-2 text-[10px] sm:text-xs px-2 py-0.5 bg-background/90 backdrop-blur-sm border shadow-sm"
                       >
                         {cropGuides.length} {language === 'ne' ? 'विषय' : 'topics'}
                       </Badge>
                     </div>
                     
-                    <CardContent className="p-2 sm:p-3 md:p-4">
-                      <h3 className="font-semibold text-center text-sm sm:text-base line-clamp-1 group-hover:text-primary transition-colors">
+                    <CardContent className="p-3 sm:p-4 bg-gradient-to-b from-background to-muted/30">
+                      <h3 className="font-bold text-center text-sm sm:text-base line-clamp-1 group-hover:text-primary transition-colors">
                         {crop}
                       </h3>
+                      <p className="text-xs text-center text-muted-foreground mt-1 group-hover:text-primary/70 transition-colors">
+                        {language === 'ne' ? 'गाइड हेर्नुहोस्' : 'View guide'} →
+                      </p>
                     </CardContent>
                   </Card>
                 </motion.div>
@@ -326,76 +347,122 @@ export function CropGuidesViewer() {
         </div>
       </div>
 
-      {/* AI Summary Section */}
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
-        <CardContent className="p-4 md:p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-              <Sparkles className="h-4 w-4 text-primary" />
+      {/* AI Summary Section - Enhanced Design */}
+      <Card className="border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-background shadow-lg overflow-hidden">
+        <CardContent className="p-4 md:p-6">
+          {/* Header */}
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md">
+                <Sparkles className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base md:text-lg">
+                  {language === 'ne' ? 'AI सारांश' : 'AI Summary'}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {language === 'ne' ? 'तपाईंको बालीको लागि सल्लाह' : 'Advice for your crop'}
+                </p>
+              </div>
             </div>
-            <h3 className="font-semibold text-sm md:text-base">
-              {language === 'ne' ? 'AI सारांश' : 'AI Summary'}
-            </h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowQueryForm(!showQueryForm)}
-              className="ml-auto h-8 px-2"
-            >
-              <MessageSquare className="h-4 w-4 mr-1" />
-              <span className="text-xs">{language === 'ne' ? 'प्रश्न सोध्नुहोस्' : 'Ask'}</span>
-            </Button>
+            
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              {aiSummary && (
+                <Button
+                  variant={isSpeaking ? "default" : "outline"}
+                  size="sm"
+                  onClick={handleSpeakSummary}
+                  className="gap-1.5"
+                >
+                  {isSpeaking ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                  <span className="hidden sm:inline text-xs">
+                    {isSpeaking 
+                      ? (language === 'ne' ? 'रोक्नुहोस्' : 'Stop') 
+                      : (language === 'ne' ? 'सुन्नुहोस्' : 'Listen')}
+                  </span>
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowQueryForm(!showQueryForm)}
+                className="gap-1.5"
+              >
+                <MessageSquare className="h-4 w-4" />
+                <span className="text-xs">{language === 'ne' ? 'प्रश्न' : 'Ask'}</span>
+              </Button>
+            </div>
           </div>
 
-          {/* Query Form */}
+          {/* Query Form - Enhanced */}
           <AnimatePresence>
             {showQueryForm && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden mb-3"
+                className="overflow-hidden mb-4"
               >
-                <div className="flex gap-2">
-                  <Textarea
-                    placeholder={language === 'ne' ? 'तपाईंको प्रश्न लेख्नुहोस्... (जस्तै: पात पहेंलो भयो के गर्ने?)' : 'Type your question...'}
-                    value={farmerQuestion}
-                    onChange={(e) => setFarmerQuestion(e.target.value)}
-                    className="min-h-[60px] text-sm resize-none"
-                  />
-                  <Button 
-                    onClick={handleAskQuestion} 
-                    disabled={!farmerQuestion.trim() || isGeneratingSummary}
-                    className="self-end"
-                    size="sm"
-                  >
-                    {isGeneratingSummary ? <Loader2 className="h-4 w-4 animate-spin" /> : language === 'ne' ? 'पठाउनुहोस्' : 'Send'}
-                  </Button>
+                <div className="p-3 bg-muted/50 rounded-lg border">
+                  <label className="text-xs font-medium text-muted-foreground mb-2 block">
+                    {language === 'ne' ? 'तपाईंको प्रश्न:' : 'Your question:'}
+                  </label>
+                  <div className="flex gap-2">
+                    <Textarea
+                      placeholder={language === 'ne' ? 'जस्तै: पात पहेँलो भयो के गर्ने?' : 'e.g., What to do for yellow leaves?'}
+                      value={farmerQuestion}
+                      onChange={(e) => setFarmerQuestion(e.target.value)}
+                      className="min-h-[60px] text-sm resize-none bg-background"
+                    />
+                    <Button 
+                      onClick={handleAskQuestion} 
+                      disabled={!farmerQuestion.trim() || isGeneratingSummary}
+                      className="self-end"
+                      size="default"
+                    >
+                      {isGeneratingSummary ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Summary Content */}
+          {/* Summary Content - Enhanced */}
           {isGeneratingSummary ? (
-            <div className="flex items-center gap-3 py-4">
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              <span className="text-sm text-muted-foreground">
+            <div className="flex items-center gap-3 py-6 justify-center">
+              <div className="relative">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <div className="absolute inset-0 animate-ping">
+                  <Sparkles className="h-8 w-8 text-primary/30" />
+                </div>
+              </div>
+              <span className="text-base text-muted-foreground font-medium">
                 {language === 'ne' ? 'सारांश तयार पार्दै...' : 'Generating summary...'}
               </span>
             </div>
           ) : aiSummary ? (
-            <div className="prose prose-sm max-w-none text-foreground">
-              <div className="whitespace-pre-line text-sm md:text-base leading-relaxed">
-                {aiSummary}
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-background/80 backdrop-blur-sm rounded-lg p-4 border border-primary/10"
+            >
+              <div className="prose prose-sm max-w-none text-foreground">
+                <div className="whitespace-pre-line text-sm md:text-base leading-relaxed">
+                  {aiSummary}
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            <div className="text-center py-4 px-2">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50 text-muted-foreground text-sm">
+                <Sparkles className="h-4 w-4" />
+                {language === 'ne' 
+                  ? 'तलको गाइड हेर्नुहोस् वा प्रश्न सोध्नुहोस्' 
+                  : 'View guide below or ask a question'}
               </div>
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground py-2">
-              {language === 'ne' 
-                ? 'तलको गाइड हेर्नुहोस् वा माथिको प्रश्न बटन थिचेर आफ्नो प्रश्न सोध्नुहोस्।' 
-                : 'View the guide below or ask a specific question above.'}
-            </p>
           )}
         </CardContent>
       </Card>
