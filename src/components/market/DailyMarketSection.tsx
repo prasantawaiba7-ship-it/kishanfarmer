@@ -5,13 +5,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Calendar, MapPin, Store, Leaf, ChevronDown } from 'lucide-react';
+import { RefreshCw, Calendar, MapPin, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { LocationFilters } from './LocationFilters';
 import { RealTimePriceUpdates } from './RealTimePriceUpdates';
 import { getCropImageUrl, handleCropImageError } from '@/lib/cropPlaceholder';
+import { NoDataMessage } from './NoDataMessage';
 
 function ProductCard({ product }: { product: DailyMarketProduct }) {
   const displayName = product.crop_name_ne || product.crop_name;
@@ -198,17 +199,9 @@ export function DailyMarketSection() {
 
       {/* Empty State */}
       {!isLoading && !error && products.length === 0 && (
-        <Card className="bg-muted/30 border-border/60">
-          <CardContent className="p-10 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
-              <Store className="h-7 w-7 text-muted-foreground/50" />
-            </div>
-            <h3 className="font-semibold text-foreground mb-2">
-              बजार मूल्य उपलब्ध छैन
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              छानिएको स्थानका लागि डाटा छैन। कृपया अर्को स्थान छान्नुहोस्।
-            </p>
+        <Card className="bg-muted/30 border-dashed border-muted-foreground/20">
+          <CardContent className="p-10">
+            <NoDataMessage variant="inline" />
           </CardContent>
         </Card>
       )}
