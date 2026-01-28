@@ -15,6 +15,7 @@ import {
   RefreshCw,
   Filter
 } from 'lucide-react';
+import { NoDataMessage } from './NoDataMessage';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useCrops } from '@/hooks/useCrops';
@@ -294,16 +295,8 @@ export function AllNepalPriceComparison() {
             </div>
           ) : filteredPrices.length === 0 ? (
             <Card>
-              <CardContent className="p-8 text-center text-muted-foreground">
-                <Globe className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p className="font-medium mb-2">
-                  {isNepali ? 'यस बालीको मूल्य डाटा उपलब्ध छैन।' : 'No price data available for this crop.'}
-                </p>
-                <p className="text-sm">
-                  {isNepali 
-                    ? 'AMPIS/कालीमाटी API जडान भएपछि स्वचालित अपडेट हुनेछ।'
-                    : 'Data will update automatically when AMPIS/Kalimati API is connected.'}
-                </p>
+              <CardContent className="p-8">
+                <NoDataMessage variant="inline" />
               </CardContent>
             </Card>
           ) : (
@@ -416,24 +409,29 @@ export function AllNepalPriceComparison() {
 
               {/* Districts Without Data */}
               {filteredMissingDistricts.length > 0 && (
-                <Card className="border-warning/30 bg-warning/5">
+                <Card className="border-dashed border-muted-foreground/30 bg-muted/10">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
-                      <AlertCircle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
+                      <AlertCircle className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                       <div>
-                        <h3 className="font-medium text-warning mb-2">
+                        <h3 className="font-medium text-muted-foreground mb-1">
                           {isNepali 
                             ? `${filteredMissingDistricts.length} जिल्लाको लागि आजको मूल्य उपलब्ध छैन`
                             : `No data available for ${filteredMissingDistricts.length} districts`}
                         </h3>
+                        <p className="text-xs text-muted-foreground/70 mb-2">
+                          {isNepali
+                            ? 'AMPIS/कालीमाटी API जडान भएपछि स्वचालित अपडेट हुनेछ।'
+                            : 'Data will update automatically when AMPIS/Kalimati API is connected.'}
+                        </p>
                         <div className="flex flex-wrap gap-1.5">
                           {filteredMissingDistricts.slice(0, 10).map(d => (
-                            <Badge key={d.id} variant="outline" className="text-xs">
+                            <Badge key={d.id} variant="outline" className="text-xs text-muted-foreground">
                               {isNepali ? d.name_ne : d.name_en}
                             </Badge>
                           ))}
                           {filteredMissingDistricts.length > 10 && (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs text-muted-foreground">
                               +{filteredMissingDistricts.length - 10} {isNepali ? 'थप' : 'more'}
                             </Badge>
                           )}
