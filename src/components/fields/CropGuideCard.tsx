@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,7 @@ import { BookOpen, Sparkles, Loader2, ChevronDown, ChevronUp, RefreshCw, Message
 import { motion, AnimatePresence } from 'framer-motion';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
+import { getCropImageUrl, handleCropImageError } from '@/lib/cropPlaceholder';
 
 // Stage options
 const STAGE_OPTIONS = [
@@ -51,6 +52,7 @@ interface CropGuideCardProps {
   cropName: string;
   cropNameEn?: string;
   cropImage?: string | null;
+  autoLoad?: boolean; // Auto-load guide on mount
 }
 
 export function CropGuideCard({
@@ -58,7 +60,9 @@ export function CropGuideCard({
   cropName,
   cropNameEn,
   cropImage,
+  autoLoad = false,
 }: CropGuideCardProps) {
+  const resolvedCropImage = getCropImageUrl(cropImage);
   const [stage, setStage] = useState('general');
   const [problemType, setProblemType] = useState('general');
   const [customQuestion, setCustomQuestion] = useState('');
@@ -114,6 +118,13 @@ export function CropGuideCard({
     }
   };
 
+  // Auto-load on mount if specified
+  useEffect(() => {
+    if (autoLoad && cropId) {
+      fetchGuide();
+    }
+  }, [autoLoad, cropId]);
+
   const toggleSection = (section: string) => {
     const newExpanded = new Set(expandedSections);
     if (newExpanded.has(section)) {
@@ -147,17 +158,12 @@ export function CropGuideCard({
     <Card className="overflow-hidden">
       <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 pb-4">
         <div className="flex items-center gap-3">
-          {cropImage ? (
-            <img
-              src={cropImage}
-              alt={cropName}
-              className="w-12 h-12 rounded-lg object-cover"
-            />
-          ) : (
-            <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
-              <BookOpen className="h-6 w-6 text-primary" />
-            </div>
-          )}
+          <img
+            src={resolvedCropImage}
+            alt={cropName}
+            className="w-12 h-12 rounded-lg object-cover"
+            onError={handleCropImageError}
+          />
           <div className="flex-1">
             <CardTitle className="text-lg">{cropName}</CardTitle>
             {cropNameEn && (

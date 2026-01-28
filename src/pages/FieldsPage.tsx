@@ -381,17 +381,20 @@ const FieldsPage = () => {
                                   className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 p-4 rounded-lg bg-muted/50"
                                 >
                                   <div className="flex items-center gap-3">
-                                    {cropInfo?.image_url ? (
-                                      <img 
-                                        src={cropInfo.image_url} 
-                                        alt={season.crop_name}
-                                        className="w-10 h-10 rounded-lg object-cover"
-                                      />
-                                    ) : (
-                                      <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                                        <Leaf className="h-5 w-5 text-primary" />
-                                      </div>
-                                    )}
+                                                {cropInfo?.image_url ? (
+                                                      <img 
+                                                        src={cropInfo.image_url} 
+                                                        alt={season.crop_name}
+                                                        className="w-10 h-10 rounded-lg object-cover"
+                                                        onError={(e) => {
+                                                          (e.target as HTMLImageElement).src = '/placeholder.svg';
+                                                        }}
+                                                      />
+                                                    ) : (
+                                                      <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                                                        <Leaf className="h-5 w-5 text-primary" />
+                                                      </div>
+                                                    )}
                                     <div>
                                       <div className="flex items-center gap-2 flex-wrap">
                                         <h4 className="font-semibold">{season.crop_name}</h4>
@@ -482,6 +485,7 @@ const FieldsPage = () => {
                       cropName={cropInfo.name_ne}
                       cropNameEn={cropInfo.name_en}
                       cropImage={cropInfo.image_url}
+                      autoLoad={true}
                     />
                   ) : (
                     <div className="text-center py-8">
