@@ -5,16 +5,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Calendar, MapPin, Store, Leaf } from 'lucide-react';
+import { RefreshCw, Calendar, MapPin, Store, Leaf, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { LocationFilters } from './LocationFilters';
 import { RealTimePriceUpdates } from './RealTimePriceUpdates';
+import { getCropImageUrl, handleCropImageError } from '@/lib/cropPlaceholder';
 
 function ProductCard({ product }: { product: DailyMarketProduct }) {
   const displayName = product.crop_name_ne || product.crop_name;
   const marketName = product.market_name_ne || product.market_name;
+  const imageUrl = getCropImageUrl(product.image_url);
 
   return (
     <motion.div
@@ -24,20 +26,12 @@ function ProductCard({ product }: { product: DailyMarketProduct }) {
     >
       <Card className="overflow-hidden border-border/60 hover:border-primary/30 hover:shadow-lg transition-all duration-300 group bg-card">
         <AspectRatio ratio={4/3} className="bg-muted/50">
-          {product.image_url ? (
-            <img
-              src={product.image_url}
-              alt={displayName}
-              className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/placeholder.svg';
-              }}
-            />
-          ) : (
-            <div className="flex items-center justify-center w-full h-full bg-gradient-to-br from-primary/8 to-primary/3">
-              <Leaf className="h-10 w-10 text-primary/40" />
-            </div>
-          )}
+          <img
+            src={imageUrl}
+            alt={displayName}
+            className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+            onError={handleCropImageError}
+          />
         </AspectRatio>
         <CardContent className="p-4 space-y-3">
           {/* Crop Name */}
@@ -219,12 +213,23 @@ export function DailyMarketSection() {
         </Card>
       )}
 
-      {/* Products Grid */}
+      {/* Products Grid - Show ALL crops */}
       {!isLoading && !error && products.length > 0 && (
         <>
-          <p className="text-sm text-muted-foreground">
-            {products.length} वटा उत्पादन फेला परे
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              {products.length} वटा उत्पादन फेला परे
+            </p>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={refresh} 
+              className="text-xs gap-1"
+            >
+              <RefreshCw className="h-3 w-3" />
+              रिफ्रेस
+            </Button>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />

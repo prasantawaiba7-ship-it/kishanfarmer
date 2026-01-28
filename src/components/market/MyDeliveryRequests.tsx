@@ -18,14 +18,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }>
   completed: { label: 'सम्पन्न', color: 'bg-blue-500', icon: CheckCircle },
 };
 
-const SHIPMENT_STATUS: Record<string, { label: string; step: number }> = {
-  created: { label: 'सिर्जना भयो', step: 1 },
-  picked_up: { label: 'पिकअप भयो', step: 2 },
-  in_transit: { label: 'ट्रान्जिटमा', step: 3 },
-  out_for_delivery: { label: 'डेलिभरीमा', step: 4 },
-  delivered: { label: 'डेलिभर भयो', step: 5 },
-  failed: { label: 'असफल', step: 0 },
-};
+// Shipment status now handled by ShipmentTimeline component
 
 export function MyDeliveryRequests() {
   const [mode, setMode] = useState<'buyer' | 'seller'>('buyer');
@@ -242,53 +235,10 @@ export function MyDeliveryRequests() {
   );
 }
 
+import { ShipmentTimeline } from './ShipmentTimeline';
+
 function ShipmentTracker({ requestId }: { requestId: string }) {
   const { shipment, isLoading } = useDeliveryShipment(requestId);
 
-  if (isLoading) {
-    return <div className="animate-pulse h-20 bg-muted rounded-lg" />;
-  }
-
-  if (!shipment) {
-    return (
-      <Card className="p-4 bg-muted/50">
-        <p className="text-sm text-muted-foreground text-center">
-          <Truck className="h-6 w-6 mx-auto mb-2 opacity-50" />
-          डेलिभरी ट्र्याकिङ उपलब्ध छैन
-        </p>
-      </Card>
-    );
-  }
-
-  const currentStep = SHIPMENT_STATUS[shipment.status]?.step || 0;
-
-  return (
-    <Card className="p-4">
-      <h4 className="font-medium mb-3 flex items-center gap-2">
-        <Truck className="h-4 w-4" />
-        ट्र्याकिङ स्थिति
-      </h4>
-      <div className="space-y-2">
-        {Object.entries(SHIPMENT_STATUS)
-          .filter(([key]) => key !== 'failed')
-          .map(([key, { label, step }]) => (
-            <div key={key} className="flex items-center gap-2">
-              <div
-                className={`w-3 h-3 rounded-full ${
-                  step <= currentStep ? 'bg-primary' : 'bg-muted'
-                }`}
-              />
-              <span className={step <= currentStep ? 'text-foreground' : 'text-muted-foreground'}>
-                {label}
-              </span>
-            </div>
-          ))}
-      </div>
-      {shipment.last_location_text && (
-        <p className="text-xs text-muted-foreground mt-3">
-          अन्तिम स्थान: {shipment.last_location_text}
-        </p>
-      )}
-    </Card>
-  );
+  return <ShipmentTimeline shipment={shipment} isLoading={isLoading} />;
 }
