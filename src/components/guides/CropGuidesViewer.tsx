@@ -11,12 +11,11 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { useCrops } from '@/hooks/useCrops';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
-import { BookOpen, ChevronLeft, Search, Leaf, Loader2, ChevronDown, ChevronUp, Sparkles, MessageSquare, Volume2, VolumeX, ArrowRight, ImageOff } from 'lucide-react';
+import { BookOpen, ChevronLeft, Search, Leaf, Loader2, ChevronDown, ChevronUp, Sparkles, MessageSquare, ArrowRight, ImageOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import { MarketPriceSummaryCard } from './MarketPriceSummaryCard';
-import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 
 export function CropGuidesViewer() {
   const navigate = useNavigate();
@@ -37,8 +36,6 @@ export function CropGuidesViewer() {
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [showQueryForm, setShowQueryForm] = useState(false);
   
-  // Text-to-Speech
-  const { speak, stop, isSpeaking } = useTextToSpeech();
 
   const filteredGuides = selectedCrop 
     ? guides.filter(g => g.crop_name === selectedCrop)
@@ -152,13 +149,6 @@ export function CropGuidesViewer() {
     }
   };
 
-  const handleSpeakSummary = () => {
-    if (isSpeaking) {
-      stop();
-    } else if (aiSummary) {
-      speak(aiSummary, language === 'ne' ? 'ne-NP' : 'en-US');
-    }
-  };
 
   if (isLoading) {
     return (
@@ -256,7 +246,6 @@ export function CropGuidesViewer() {
                       setExpandedSections(new Set());
                       setAiSummary(null);
                       setFarmerQuestion('');
-                      stop(); // Stop any playing audio
                     }}
                   >
                     {/* Image or Emoji Header - Enhanced gradient */}
@@ -332,7 +321,6 @@ export function CropGuidesViewer() {
             setSelectedCrop(null);
             setAiSummary(null);
             setFarmerQuestion('');
-            stop(); // Stop any playing audio
             
             // If we came from a specific location, navigate back
             // Otherwise just clear the selection (stay on same page)
@@ -388,21 +376,6 @@ export function CropGuidesViewer() {
             
             {/* Action Buttons */}
             <div className="flex gap-2">
-              {aiSummary && (
-                <Button
-                  variant={isSpeaking ? "default" : "outline"}
-                  size="sm"
-                  onClick={handleSpeakSummary}
-                  className="gap-1.5"
-                >
-                  {isSpeaking ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-                  <span className="hidden sm:inline text-xs">
-                    {isSpeaking 
-                      ? (language === 'ne' ? 'रोक्नुहोस्' : 'Stop') 
-                      : (language === 'ne' ? 'सुन्नुहोस्' : 'Listen')}
-                  </span>
-                </Button>
-              )}
               <Button
                 variant="ghost"
                 size="sm"
