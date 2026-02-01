@@ -6,10 +6,7 @@ import Footer from '@/components/layout/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
 import { useFields, Field } from '@/hooks/useFields';
 import { useCropSeasons, CropSeason } from '@/hooks/useCropSeasons';
@@ -17,6 +14,7 @@ import { SoilTestForm } from '@/components/soil/SoilTestForm';
 import { SoilAdvisoryCard } from '@/components/soil/SoilAdvisoryCard';
 import { AddCropSeasonModal } from '@/components/fields/AddCropSeasonModal';
 import { CropGuideCard } from '@/components/fields/CropGuideCard';
+import { AddFieldDialog } from '@/components/fields/AddFieldDialog';
 import { useCrops } from '@/hooks/useCrops';
 import { 
   MapPin, Plus, Trash2, Leaf, Calendar, ChevronRight,
@@ -44,13 +42,6 @@ const FieldsPage = () => {
   const [isSoilTestOpen, setIsSoilTestOpen] = useState(false);
   const [viewingGuideForSeason, setViewingGuideForSeason] = useState<CropSeason | null>(null);
   
-  const [newField, setNewField] = useState({
-    name: '',
-    area: '',
-    area_unit: 'ropani',
-    district: '',
-    municipality: '',
-  });
 
   if (authLoading || fieldsLoading) {
     return (
@@ -64,23 +55,6 @@ const FieldsPage = () => {
     navigate('/auth');
     return null;
   }
-
-  const handleCreateField = async () => {
-    if (!newField.name) return;
-
-    await addField({
-      name: newField.name,
-      area: newField.area ? parseFloat(newField.area) : null,
-      area_unit: newField.area_unit,
-      district: newField.district || null,
-      municipality: newField.municipality || null,
-      latitude: null,
-      longitude: null,
-    });
-
-    setNewField({ name: '', area: '', area_unit: 'ropani', district: '', municipality: '' });
-    setIsAddFieldOpen(false);
-  };
 
   const handleDeleteField = async (id: string) => {
     if (confirm('के तपाईं यो खेत हटाउन चाहनुहुन्छ?')) {
@@ -153,78 +127,16 @@ const FieldsPage = () => {
                   <span className="hidden sm:inline">खेती गाइड</span>
                   <span className="sm:hidden">गाइड</span>
                 </Button>
-                <Dialog open={isAddFieldOpen} onOpenChange={setIsAddFieldOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="gap-1 sm:gap-2" size="sm">
-                      <Plus className="h-4 w-4" />
-                      <span className="hidden sm:inline">नयाँ खेत</span>
-                      <span className="sm:hidden">थप्ने</span>
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>नयाँ खेत थप्नुहोस्</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 pt-4">
-                    <div>
-                      <Label>खेतको नाम *</Label>
-                      <Input
-                        placeholder="जस्तै: पूर्वी खेत"
-                        value={newField.name}
-                        onChange={(e) => setNewField({ ...newField, name: e.target.value })}
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>क्षेत्रफल</Label>
-                        <Input
-                          type="number"
-                          placeholder="5"
-                          value={newField.area}
-                          onChange={(e) => setNewField({ ...newField, area: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <Label>एकाइ</Label>
-                        <Select
-                          value={newField.area_unit}
-                          onValueChange={(v) => setNewField({ ...newField, area_unit: v })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {areaUnits.map((u) => (
-                              <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>जिल्ला</Label>
-                        <Input
-                          placeholder="काठमाडौं"
-                          value={newField.district}
-                          onChange={(e) => setNewField({ ...newField, district: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <Label>नगरपालिका</Label>
-                        <Input
-                          placeholder="बूढानीलकण्ठ"
-                          value={newField.municipality}
-                          onChange={(e) => setNewField({ ...newField, municipality: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <Button onClick={handleCreateField} className="w-full">
-                      खेत थप्नुहोस्
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                <Button className="gap-1 sm:gap-2" size="sm" onClick={() => setIsAddFieldOpen(true)}>
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">नयाँ खेत</span>
+                  <span className="sm:hidden">थप्ने</span>
+                </Button>
+                <AddFieldDialog
+                  open={isAddFieldOpen}
+                  onOpenChange={setIsAddFieldOpen}
+                  onSubmit={addField}
+                />
               </div>
             </div>
 
