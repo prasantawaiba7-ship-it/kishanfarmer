@@ -14,13 +14,13 @@ const Footer = () => {
             <span className="font-bold text-xl text-background">Kisan Sathi</span>
             </Link>
             <p className="text-background/70 max-w-sm leading-relaxed">
-              नेपाली किसानहरूको लागि AI-संचालित बाली निगरानी र रोग पहिचान प्रणाली।
-              तपाईंको खेतीमा स्मार्ट साथी।
+              भारतीय किसानों के लिए AI-संचालित फसल निगरानी और रोग पहचान प्रणाली।
+              आपकी खेती में स्मार्ट साथी।
             </p>
           </div>
 
           <div>
-            <h4 className="font-semibold mb-4 text-background">प्लेटफर्म</h4>
+            <h4 className="font-semibold mb-4 text-background">प्लेटफ़ॉर्म</h4>
             <ul className="space-y-2">
               <li>
                 <Link
@@ -32,10 +32,10 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  to="/authority"
+                  to="/market"
                   className="text-background/70 hover:text-background transition-colors"
                 >
-                  प्राधिकरण ड्यासबोर्ड
+                  मंडी भाव
                 </Link>
               </li>
               <li>
@@ -50,14 +50,14 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="font-semibold mb-4 text-background">स्रोतहरू</h4>
+            <h4 className="font-semibold mb-4 text-background">संसाधन</h4>
             <ul className="space-y-2">
               <li>
                 <Link
                   to="/disease-detection"
                   className="text-background/70 hover:text-background transition-colors"
                 >
-                  रोग पहिचान
+                  रोग पहचान
                 </Link>
               </li>
               <li>
@@ -65,7 +65,7 @@ const Footer = () => {
                   href="#"
                   className="text-background/70 hover:text-background transition-colors"
                 >
-                  प्रयोगकर्ता गाइड
+                  उपयोगकर्ता गाइड
                 </a>
               </li>
               <li>
@@ -73,7 +73,7 @@ const Footer = () => {
                   href="#"
                   className="text-background/70 hover:text-background transition-colors"
                 >
-                  सम्पर्क सहायता
+                  संपर्क सहायता
                 </a>
               </li>
             </ul>
@@ -83,14 +83,14 @@ const Footer = () => {
         <div className="border-t border-background/10 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
             <p className="text-sm text-background/60">
-              © २०२४ Kisan Sathi। नेपाली किसानहरूको लागि बनाइएको।
+              © 2024 Kisan Sathi। भारतीय किसानों के लिए बनाया गया।
             </p>
             <div className="flex gap-6">
               <a href="#" className="text-sm text-background/60 hover:text-background">
                 गोपनीयता नीति
               </a>
               <a href="#" className="text-sm text-background/60 hover:text-background">
-                सेवाका सर्तहरू
+                सेवा की शर्तें
               </a>
             </div>
           </div>

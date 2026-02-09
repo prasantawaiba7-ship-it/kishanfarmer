@@ -51,7 +51,7 @@ const HeroSection = () => {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6"
           >
             <Leaf className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold text-primary">HUNCHA – किसान साथी</span>
+            <span className="text-sm font-semibold text-primary">किसान साथी – आपका खेती का साथी</span>
           </motion.div>
 
           {/* Welcome message */}
@@ -73,8 +73,8 @@ const HeroSection = () => {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-5"
           >
-            तपाईंको खेतीको{" "}
-            <span className="text-gradient">विश्वसनीय साथी</span>
+            आपकी खेती का{" "}
+            <span className="text-gradient">भरोसेमंद साथी</span>
           </motion.h1>
 
           {/* Subtitle */}
@@ -84,7 +84,7 @@ const HeroSection = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-8"
           >
-            रोग पहिचान, मौसम जानकारी, बजार भाउ र AI खेती सल्लाह — सबै एकै ठाउँमा, सजिलो र छिटो।
+            रोग पहचान, मौसम जानकारी, मंडी भाव और AI खेती सलाह — सब एक जगह, आसान और तेज़।
           </motion.p>
 
           {/* CTA Buttons */}
@@ -97,7 +97,7 @@ const HeroSection = () => {
             <Link to="/disease-detection">
               <Button size="lg" className="group rounded-full px-6 sm:px-8 py-6 text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transition-all">
                 <Camera className="w-5 h-5 mr-2" />
-                रोग पहिचान गर्नुहोस्
+                रोग पहचानें
                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
@@ -108,7 +108,7 @@ const HeroSection = () => {
                 className="rounded-full px-6 sm:px-8 py-6 text-base sm:text-lg font-medium border-2 hover:bg-primary/5"
               >
                 <Store className="w-5 h-5 mr-2 text-primary" />
-                बजार हेर्नुहोस्
+                मंडी भाव देखें
               </Button>
             </Link>
           </motion.div>
@@ -121,10 +121,10 @@ const HeroSection = () => {
             className="mt-10 sm:mt-12 flex flex-wrap justify-center gap-6 sm:gap-10"
           >
             {[
-              { value: "१०,०००+", label: "किसानहरू" },
-              { value: "७७", label: "जिल्लाहरू" },
-              { value: "२४/७", label: "AI सहायता" },
-            ].map((stat, index) => (
+              { value: "10,000+", label: "किसान" },
+              { value: "800+", label: "ज़िले" },
+              { value: "24/7", label: "AI सहायता" },
+            ].map((stat) => (
               <div key={stat.label} className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-primary">{stat.value}</div>
                 <div className="text-sm text-muted-foreground">{stat.label}</div>

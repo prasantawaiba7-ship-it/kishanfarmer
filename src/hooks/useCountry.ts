@@ -11,7 +11,7 @@ interface CountryState {
 export const useCountry = create<CountryState>()(
   persist(
     (set) => ({
-      country: 'nepal',
+      country: 'india',
       setCountry: (country) => set({ country }),
     }),
     {

@@ -1,12 +1,12 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Camera, Cloud, Store, Bot, MapPin, Stethoscope, BookOpen } from "lucide-react";
+import { Camera, Cloud, Store, Bot, MapPin, BookOpen } from "lucide-react";
 
 const quickActions = [
   {
     icon: Camera,
-    label: "रोग पहिचान",
-    sublabel: "फोटोबाट पहिचान",
+    label: "रोग पहचान",
+    sublabel: "फोटो से पहचानें",
     href: "/disease-detection",
     color: "bg-red-500",
     bgColor: "bg-red-50 dark:bg-red-950/30",
@@ -15,8 +15,8 @@ const quickActions = [
   },
   {
     icon: Store,
-    label: "बजार भाउ",
-    sublabel: "आजको मूल्य",
+    label: "मंडी भाव",
+    sublabel: "आज का भाव",
     href: "/market",
     color: "bg-primary",
     bgColor: "bg-primary/5",
@@ -46,7 +46,7 @@ const quickActions = [
   {
     icon: MapPin,
     label: "खेत",
-    sublabel: "खेत व्यवस्थापन",
+    sublabel: "खेत प्रबंधन",
     href: "/fields",
     color: "bg-teal-500",
     bgColor: "bg-teal-50 dark:bg-teal-950/30",
@@ -55,7 +55,7 @@ const quickActions = [
   },
   {
     icon: BookOpen,
-    label: "बाली गाइड",
+    label: "फसल गाइड",
     sublabel: "खेती ज्ञान",
     href: "/crop-guides",
     color: "bg-amber-500",
@@ -76,14 +76,13 @@ const QuickActionsGrid = () => {
           className="text-center mb-6 sm:mb-8"
         >
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">
-            के गर्नुहुन्छ आज?
+            आज क्या करना है?
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            छिटो पहुँचका लागि तलको कार्ड छान्नुहोस्
+            जल्दी पहुँच के लिए नीचे का कार्ड चुनें
           </p>
         </motion.div>
 
-        {/* Grid: 2 cols mobile, 3 cols tablet, 6 cols desktop */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 max-w-5xl mx-auto">
           {quickActions.map((action, index) => (
             <motion.div
@@ -96,14 +95,11 @@ const QuickActionsGrid = () => {
                 <div
                   className={`relative rounded-2xl p-4 sm:p-5 ${action.bgColor} border ${action.borderColor} ${action.hoverColor} transition-all duration-300 hover:shadow-lg active:scale-[0.98] cursor-pointer group`}
                 >
-                  {/* Icon */}
                   <div
                     className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl ${action.color} flex items-center justify-center mb-3 shadow-md group-hover:scale-110 transition-transform mx-auto`}
                   >
                     <action.icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                   </div>
-
-                  {/* Labels */}
                   <div className="text-center">
                     <div className="text-sm sm:text-base font-semibold text-foreground">
                       {action.label}

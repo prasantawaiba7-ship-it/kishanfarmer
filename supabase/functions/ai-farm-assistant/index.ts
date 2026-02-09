@@ -6,17 +6,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Function to extract disease/pest keywords from user message
 function extractDiseaseKeywords(message: string): string[] {
   const keywords: string[] = [];
   
-  // Common disease/pest patterns in English and Nepali
   const diseasePatterns = [
-    // English patterns
     /blast|blight|rust|wilt|rot|mildew|virus|curl|spot|smut|borer|armyworm|aphid|mite|moth|hopper|caterpillar/gi,
-    // Nepali patterns
-    /झुल्सा|रोग|कीरा|माहुरी|लाही|काट|ढुसी|सुक्ने|कुहिने|पहेँलो|खैरो|सेतो/gi,
-    // Crop-disease combinations
+    /झुलसा|रोग|कीट|माहू|लाही|काट|फफूंदी|सूखना|सड़ना|पीला|भूरा|सफ़ेद/gi,
     /rice blast|late blight|early blight|leaf curl|yellow rust|brown rust|fall armyworm|stem borer|powdery mildew|downy mildew|bacterial wilt|fusarium wilt/gi
   ];
 
@@ -27,32 +22,25 @@ function extractDiseaseKeywords(message: string): string[] {
     }
   }
 
-  // Also extract crop names for better matching
-  const cropPatterns = /rice|wheat|maize|corn|potato|tomato|vegetables|आलु|धान|गहुँ|मकै|गोलभेडा|तरकारी/gi;
+  const cropPatterns = /rice|wheat|maize|corn|potato|tomato|vegetables|onion|mustard|soybean|cotton|sugarcane|आलू|धान|गेहूँ|मक्का|टमाटर|प्याज़|सरसों|गन्ना|कपास|सोयाबीन/gi;
   const cropMatches = message.match(cropPatterns);
   if (cropMatches) {
     keywords.push(...cropMatches.map(m => m.toLowerCase()));
   }
 
-  return [...new Set(keywords)]; // Remove duplicates
+  return [...new Set(keywords)];
 }
 
-// Fetch relevant treatments from database
 async function fetchRelevantTreatments(keywords: string[], supabaseUrl: string, supabaseKey: string) {
   if (keywords.length === 0) return [];
 
   try {
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Build search query
-    let query = supabase
+    const { data, error } = await supabase
       .from('crop_treatments')
       .select('id, crop_name, disease_or_pest_name, disease_or_pest_name_ne, treatment_title, treatment_title_ne, youtube_video_url, severity_level')
-      .eq('is_active', true);
-
-    // Search for matching treatments
-    const searchTerms = keywords.join(' ');
-    const { data, error } = await query
+      .eq('is_active', true)
       .or(`disease_or_pest_name.ilike.%${keywords[0]}%,crop_name.ilike.%${keywords[0]}%,treatment_title.ilike.%${keywords[0]}%`)
       .limit(5);
 
@@ -61,7 +49,6 @@ async function fetchRelevantTreatments(keywords: string[], supabaseUrl: string, 
       return [];
     }
 
-    // Further filter by relevance score
     const scoredResults = (data || []).map(treatment => {
       let score = 0;
       const treatmentText = `${treatment.crop_name} ${treatment.disease_or_pest_name} ${treatment.treatment_title}`.toLowerCase();
@@ -75,7 +62,6 @@ async function fetchRelevantTreatments(keywords: string[], supabaseUrl: string, 
       return { ...treatment, score };
     });
 
-    // Sort by relevance and return top 3
     return scoredResults
       .filter(t => t.score > 0)
       .sort((a, b) => b.score - a.score)
@@ -86,97 +72,62 @@ async function fetchRelevantTreatments(keywords: string[], supabaseUrl: string, 
   }
 }
 
-// Language-specific system prompts for Nepal farming context
 const getSystemPrompt = (language: string): string => {
   const baseKnowledge = `
-## तपाईंको ज्ञान र क्षमताहरू:
+## आपका ज्ञान और क्षमताएँ:
 
-### बाली रोगहरू (Crop Diseases):
-- **धान (Rice)**: Blast (तोपे रोग), Sheath Blight (खोल झुल्सा), Brown Spot (खैरो थोप्ला), Bacterial Leaf Blight (जिवाणु पात झुल्सा)
-- **गहुँ (Wheat)**: Yellow Rust (पहेँलो काट), Brown Rust (खैरो काट), Loose Smut (धूलो रोग), Powdery Mildew (सेतो धूली)
-- **मकै (Maize)**: Stem Borer (डाँठ खोर्ने कीरा), Fall Armyworm (फौजी किरा), Turcicum Leaf Blight (पातझुल्सा), Downy Mildew
-- **आलु (Potato)**: Late Blight (पछिल्लो झुल्सा), Early Blight (अगौटे झुल्सा), Black Scurf, Viral Diseases
-- **गोलभेडा (Tomato)**: Leaf Curl Virus (पात कुम्मिने रोग), Bacterial Wilt (ओइलाउने रोग), Fusarium Wilt, Blossom End Rot
-- **तरकारी (Vegetables)**: Diamond Back Moth, Aphids (लाही), Red Spider Mite, Powdery Mildew, Anthracnose
+### फसल रोग (Crop Diseases):
+- **धान (Rice)**: Blast (ब्लास्ट), Sheath Blight (शीथ ब्लाइट), Brown Spot (भूरा धब्बा), Bacterial Leaf Blight (जीवाणु पत्ती झुलसा)
+- **गेहूँ (Wheat)**: Yellow Rust (पीला रतुआ), Brown Rust (भूरा रतुआ), Loose Smut (खुला कंडवा), Powdery Mildew (छाछ्या)
+- **मक्का (Maize)**: Stem Borer (तना छेदक), Fall Armyworm (फॉल आर्मीवर्म), Turcicum Leaf Blight, Downy Mildew (मृदुरोमिल फफूंदी)
+- **आलू (Potato)**: Late Blight (पछेती झुलसा), Early Blight (अगेती झुलसा), Black Scurf, Viral Diseases
+- **टमाटर (Tomato)**: Leaf Curl Virus (पत्ती मोड़क विषाणु), Bacterial Wilt (जीवाणु म्लानि), Fusarium Wilt, Blossom End Rot
+- **सब्ज़ियाँ**: Diamond Back Moth, Aphids (माहू), Red Spider Mite, Powdery Mildew, Anthracnose
+- **प्याज़ (Onion)**: Purple Blotch (बैंगनी धब्बा), Stemphylium Blight, Thrips (थ्रिप्स)
+- **सरसों (Mustard)**: White Rust (सफ़ेद रतुआ), Alternaria Blight, Aphids
 
-### रोग पहिचान र उपचार (Disease Identification & Treatment):
-- लक्षणहरू विस्तृत रूपमा व्याख्या गर्नुहोस्
-- जैविक र रासायनिक दुवै उपचार विकल्पहरू दिनुहोस्
-- औषधिको मात्रा, समय, र प्रयोग विधि स्पष्ट गर्नुहोस्
-- रोकथाम र भविष्यको लागि सुझाव दिनुहोस्
-- कहिले विशेषज्ञको सल्लाह लिने भन्ने बताउनुहोस्
+### रोग पहचान और उपचार:
+- लक्षणों को विस्तार से समझाएँ
+- जैविक और रासायनिक दोनों उपचार विकल्प दें
+- दवाई की मात्रा, समय, और प्रयोग विधि स्पष्ट करें
+- रोकथाम और भविष्य के लिए सुझाव दें
+- कब विशेषज्ञ की सलाह लेनी चाहिए बताएँ
 
-### कृषि अभ्यासहरू (Agricultural Practices):
-- माटो तयारी र बीउ रोपण
-- सिंचाई व्यवस्थापन
-- मल प्रयोग (जैविक र रासायनिक)
-- कीट र रोग व्यवस्थापन (IPM)
-- बाली कटनी र भण्डारण
+### कृषि अभ्यास:
+- मिट्टी तैयारी और बीज बुवाई
+- सिंचाई प्रबंधन
+- खाद प्रयोग (जैविक और रासायनिक)
+- कीट और रोग प्रबंधन (IPM)
+- फसल कटाई और भंडारण
 
-### नेपाल-विशेष जानकारी:
-- नेपालका ७ प्रदेशहरूमा फरक जलवायु र खेती अवस्था
-- मनसुन मौसम (असार-भाद्र) र हिउँदे खेती
-- स्थानीय बजार मूल्य र उपलब्ध कृषि सामग्रीहरू
-- सरकारी कृषि सेवाहरू र सम्पर्क`;
+### भारत-विशेष जानकारी:
+- भारत के 28 राज्यों और 8 केंद्र शासित प्रदेशों में अलग-अलग जलवायु और खेती की स्थिति
+- खरीफ़ (जून-अक्टूबर), रबी (नवंबर-मार्च), ज़ायद (मार्च-जून) मौसम
+- MSP (न्यूनतम समर्थन मूल्य) और सरकारी योजनाएँ (PM-Kisan, PMFBY, Soil Health Card)
+- मंडी भाव और उपलब्ध कृषि सामग्री
+- ICAR/KVK सिफारिशें`;
 
   const languageInstructions: Record<string, string> = {
-    ne: `तपाईं "कृषि मित्र" (Krishi Mitra) हुनुहुन्छ - नेपाली किसानहरूको लागि विशेषज्ञ कृषि सहायक।
-
-${baseKnowledge}
-
-## जवाफ दिने शैली:
-- सधैं नेपाली भाषामा जवाफ दिनुहोस्
-- विस्तृत र गहन जानकारी दिनुहोस् (५-१० वाक्य वा आवश्यकता अनुसार थप)
-- रोग वा समस्याको बारेमा सोध्दा: कारण, लक्षण, उपचार, र रोकथाम सबै बताउनुहोस्
-- जैविक (🌿) र रासायनिक (💊) दुवै विकल्प दिनुहोस्
-- औषधिको नाम, मात्रा, र प्रयोग विधि स्पष्ट पार्नुहोस्
-- नेपाली रुपैयाँ (रु.) प्रयोग गर्नुहोस्
-- किसानलाई प्रोत्साहित गर्ने भाषा प्रयोग गर्नुहोस्
-- Bullet points र numbering प्रयोग गरी स्पष्ट बनाउनुहोस्
-
-## महत्त्वपूर्ण नियम:
-- "नमस्ते", "नमस्कार", वा कुनै अभिवादन नगर्नुहोस् - सिधै जवाफ दिनुहोस्
-- बारम्बार औपचारिक भाषा प्रयोग नगर्नुहोस्
-- प्रत्येक जवाफमा नयाँ अभिवादन नगर्नुहोस्`,
-    
-    hi: `आप "कृषि मित्र" (Krishi Mitra) हैं - नेपाली किसानों के लिए विशेषज्ञ कृषि सहायक।
+    hi: `आप "किसान साथी" (Kisan Sathi) हैं – भारतीय किसानों के लिए विशेषज्ञ कृषि सहायक।
 
 ${baseKnowledge}
 
 ## जवाब देने की शैली:
-- हमेशा हिंदी में जवाब दें
-- विस्तृत और गहन जानकारी दें (५-१० वाक्य या आवश्यकतानुसार अधिक)
-- रोग या समस्या के बारे में: कारण, लक्षण, उपचार, और रोकथाम सभी बताएं
+- हमेशा सरल हिंदी में जवाब दें
+- विस्तृत और गहन जानकारी दें (5-10 वाक्य या आवश्यकतानुसार अधिक)
+- रोग या समस्या के बारे में: कारण, लक्षण, उपचार, और रोकथाम सभी बताएँ
 - जैविक (🌿) और रासायनिक (💊) दोनों विकल्प दें
 - दवाई का नाम, मात्रा, और उपयोग विधि स्पष्ट करें
-- नेपाली रुपये (रु.) का उपयोग करें
+- भारतीय रुपये (₹) का उपयोग करें
 - किसान को प्रोत्साहित करने वाली भाषा का उपयोग करें
+- Bullet points और numbering का उपयोग करें
 
 ## महत्वपूर्ण नियम:
-- "नमस्ते", "नमस्कार" या कोई अभिवादन मत करें - सीधे जवाब दें
-- बार-बार औपचारिक भाषा का उपयोग न करें`,
-    
-    tamang: `तपाईं "कृषि मित्र" हुनुहुन्छ - तामाङ किसानहरूको लागि विशेषज्ञ कृषि सहायक।
-${baseKnowledge}
-तामाङ वा नेपाली भाषामा विस्तृत जवाफ दिनुहोस्।`,
-    
-    newar: `तपाईं "कृषि मित्र" हुनुहुन्छ - नेवार किसानहरूको लागि विशेषज्ञ कृषि सहायक।
-${baseKnowledge}
-नेवारी वा नेपाली भाषामा विस्तृत जवाफ दिनुहोस्।`,
-    
-    maithili: `तपाईं "कृषि मित्र" हुनुहुन्छ - मैथिली किसानहरूको लागि विशेषज्ञ कृषि सहायक।
-${baseKnowledge}
-मैथिली वा नेपाली भाषामा विस्तृत जवाफ दिनुहोस्।`,
-    
-    magar: `तपाईं "कृषि मित्र" हुनुहुन्छ - मगर किसानहरूको लागि विशेषज्ञ कृषि सहायक।
-${baseKnowledge}
-मगर वा नेपाली भाषामा विस्तृत जवाफ दिनुहोस्।`,
-    
-    rai: `तपाईं "कृषि मित्र" हुनुहुन्छ - राई किसानहरूको लागि विशेषज्ञ कृषि सहायक।
-${baseKnowledge}
-राई वा नेपाली भाषामा विस्तृत जवाफ दिनुहोस्।`,
-    
-    en: `You are "Krishi Mitra" (Farming Friend) - an expert agricultural assistant for Nepali farmers.
+- "नमस्ते", "नमस्कार" या कोई अभिवादन मत करें – सीधे जवाब दें
+- बार-बार औपचारिक भाषा का उपयोग न करें
+- सीधे मुद्दे पर आएँ`,
+
+    en: `You are "Kisan Sathi" (Farming Friend) – an expert agricultural assistant for Indian farmers.
 
 ${baseKnowledge}
 
@@ -186,17 +137,17 @@ ${baseKnowledge}
 - For disease/problem queries: explain causes, symptoms, treatment, AND prevention
 - Offer both organic (🌿) and chemical (💊) treatment options
 - Clearly state medicine names, dosages, and application methods
-- Use Nepali Rupees (Rs.) for prices
+- Use Indian Rupees (₹) for prices
 - Use encouraging language to support farmers
 - Use bullet points and numbering for clarity
 
 ## Important Rules:
-- Do NOT say "Namaste", "Hello" or any greeting - respond directly to the question
+- Do NOT say "Namaste", "Hello" or any greeting – respond directly to the question
 - Do NOT use overly formal language repeatedly
 - Get straight to the point with your answers`,
   };
   
-  return languageInstructions[language] || languageInstructions.ne;
+  return languageInstructions[language] || languageInstructions.hi;
 };
 
 serve(async (req) => {
@@ -207,7 +158,7 @@ serve(async (req) => {
   const startTime = Date.now();
 
   try {
-    const { messages, language = 'ne' } = await req.json();
+    const { messages, language = 'hi' } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
@@ -216,17 +167,13 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Build simple messages - only take last 2 messages for context
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const recentMessages = messages.slice(-2).map((msg: any) => ({
       role: msg.role,
       content: typeof msg.content === 'string' ? msg.content : (Array.isArray(msg.content) ? msg.content[0]?.text || '' : String(msg.content))
     }));
 
-    // Extract the latest user message for keyword extraction
     const latestUserMessage = recentMessages.find((m: any) => m.role === 'user')?.content || '';
     
-    // Extract disease/pest keywords and fetch relevant treatments
     const keywords = extractDiseaseKeywords(latestUserMessage);
     let treatments: any[] = [];
     
@@ -236,7 +183,6 @@ serve(async (req) => {
       console.log(`[AI] Found ${treatments.length} relevant treatments`);
     }
 
-    // Get language-specific system prompt
     const systemPrompt = getSystemPrompt(language);
 
     console.log(`[AI] Starting request, lang=${language}, msgs=${recentMessages.length}`);
@@ -248,14 +194,14 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash", // Better model for detailed responses
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           ...recentMessages
         ],
         stream: true,
-        max_tokens: 1500, // Allow much longer responses for detailed disease info
-        temperature: 0.4, // Slightly creative for helpful responses
+        max_tokens: 1500,
+        temperature: 0.4,
       }),
     });
 
@@ -263,7 +209,7 @@ serve(async (req) => {
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "धेरै अनुरोध। केही समय पछि प्रयास गर्नुहोस्।" }), {
+        return new Response(JSON.stringify({ error: "बहुत अधिक अनुरोध। कुछ समय बाद प्रयास करें।" }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -276,14 +222,11 @@ serve(async (req) => {
       });
     }
 
-    // If we have treatments, we need to append them after the streaming response
-    // We'll do this by transforming the stream
     if (treatments.length > 0) {
       const originalStream = response.body;
       
       const transformedStream = new TransformStream({
         async start(controller) {
-          // Process original stream
           if (originalStream) {
             const reader = originalStream.getReader();
             try {
@@ -297,7 +240,6 @@ serve(async (req) => {
             }
           }
           
-          // Append treatments data as a custom SSE event
           const treatmentsEvent = `\n\ndata: ${JSON.stringify({ treatments })}\n\n`;
           controller.enqueue(new TextEncoder().encode(treatmentsEvent));
           controller.terminate();

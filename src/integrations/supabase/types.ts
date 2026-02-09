@@ -904,6 +904,7 @@ export type Database = {
           image_url_uploaded: string | null
           is_active: boolean | null
           name_en: string
+          name_hi: string | null
           name_ne: string
           needs_image_review: boolean | null
           region_group: string | null
@@ -921,6 +922,7 @@ export type Database = {
           image_url_uploaded?: string | null
           is_active?: boolean | null
           name_en: string
+          name_hi?: string | null
           name_ne: string
           needs_image_review?: boolean | null
           region_group?: string | null
@@ -938,6 +940,7 @@ export type Database = {
           image_url_uploaded?: string | null
           is_active?: boolean | null
           name_en?: string
+          name_hi?: string | null
           name_ne?: string
           needs_image_review?: boolean | null
           region_group?: string | null
@@ -945,6 +948,72 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      daily_mandi_prices: {
+        Row: {
+          arrival_qty: number | null
+          created_at: string
+          crop_id: number | null
+          date: string
+          id: string
+          last_synced_at: string | null
+          mandi_id: number | null
+          price_max: number | null
+          price_min: number | null
+          price_modal: number | null
+          source: string | null
+          source_ref: string | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          arrival_qty?: number | null
+          created_at?: string
+          crop_id?: number | null
+          date?: string
+          id?: string
+          last_synced_at?: string | null
+          mandi_id?: number | null
+          price_max?: number | null
+          price_min?: number | null
+          price_modal?: number | null
+          source?: string | null
+          source_ref?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          arrival_qty?: number | null
+          created_at?: string
+          crop_id?: number | null
+          date?: string
+          id?: string
+          last_synced_at?: string | null
+          mandi_id?: number | null
+          price_max?: number | null
+          price_min?: number | null
+          price_modal?: number | null
+          source?: string | null
+          source_ref?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_mandi_prices_crop_id_fkey"
+            columns: ["crop_id"]
+            isOneToOne: false
+            referencedRelation: "crops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_mandi_prices_mandi_id_fkey"
+            columns: ["mandi_id"]
+            isOneToOne: false
+            referencedRelation: "india_mandis"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       daily_market_products: {
         Row: {
@@ -1552,6 +1621,7 @@ export type Database = {
       farmer_profiles: {
         Row: {
           avatar_url: string | null
+          country: string | null
           created_at: string
           district: string | null
           full_name: string
@@ -1570,6 +1640,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          country?: string | null
           created_at?: string
           district?: string | null
           full_name: string
@@ -1588,6 +1659,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          country?: string | null
           created_at?: string
           district?: string | null
           full_name?: string
@@ -1694,6 +1766,118 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      india_districts: {
+        Row: {
+          created_at: string
+          id: number
+          is_active: boolean
+          lgd_code: string | null
+          name_en: string
+          name_hi: string
+          state_id: number
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          is_active?: boolean
+          lgd_code?: string | null
+          name_en: string
+          name_hi: string
+          state_id: number
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          is_active?: boolean
+          lgd_code?: string | null
+          name_en?: string
+          name_hi?: string
+          state_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "india_districts_state_id_fkey"
+            columns: ["state_id"]
+            isOneToOne: false
+            referencedRelation: "india_states"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      india_mandis: {
+        Row: {
+          created_at: string
+          district_id: number
+          id: number
+          is_active: boolean
+          lat: number | null
+          lng: number | null
+          mandi_code: string | null
+          name_en: string
+          name_hi: string
+          source: string | null
+        }
+        Insert: {
+          created_at?: string
+          district_id: number
+          id?: number
+          is_active?: boolean
+          lat?: number | null
+          lng?: number | null
+          mandi_code?: string | null
+          name_en: string
+          name_hi: string
+          source?: string | null
+        }
+        Update: {
+          created_at?: string
+          district_id?: number
+          id?: number
+          is_active?: boolean
+          lat?: number | null
+          lng?: number | null
+          mandi_code?: string | null
+          name_en?: string
+          name_hi?: string
+          source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "india_mandis_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "india_districts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      india_states: {
+        Row: {
+          created_at: string
+          id: number
+          is_active: boolean
+          name_en: string
+          name_hi: string
+          state_code: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          is_active?: boolean
+          name_en: string
+          name_hi: string
+          state_code?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          is_active?: boolean
+          name_en?: string
+          name_hi?: string
+          state_code?: string | null
+        }
+        Relationships: []
       }
       learning_levels: {
         Row: {
