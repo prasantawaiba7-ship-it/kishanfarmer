@@ -35,10 +35,18 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   );
 }
 
+const fallbackContext: LanguageContextType = {
+  language: 'ne' as Language,
+  setLanguage: () => {},
+  t: (key: string) => translations?.['ne']?.[key] || translations?.['en']?.[key] || key,
+  languages,
+};
+
 export function useLanguage() {
   const context = useContext(LanguageContext);
   if (!context) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
+    console.warn('useLanguage called outside LanguageProvider, using fallback');
+    return fallbackContext;
   }
   return context;
 }
