@@ -12,10 +12,10 @@ const Index = () => {
   return (
     <>
       <Helmet>
-        <title>Kisan Sathi | AI-Powered Farming Assistant</title>
+        <title>Kisan Sathi | AI-Powered Farming Assistant for Indian Farmers</title>
         <meta
           name="description"
-          content="Kisan Sathi helps Nepali farmers with AI-powered crop disease detection, weather advisories, market prices, and personalized farming recommendations."
+          content="Kisan Sathi helps Indian farmers with AI-powered crop disease detection, weather advisories, mandi prices, and personalized farming recommendations in Hindi."
         />
       </Helmet>
       <div className="min-h-screen bg-background">

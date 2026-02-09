@@ -52,13 +52,13 @@ export function UserBar() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-6 px-1.5 gap-1">
               <Settings className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline text-xs">सेटिङ</span>
+              <span className="hidden sm:inline text-xs">सेटिंग</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48 bg-popover z-50">
             <DropdownMenuItem onClick={() => navigate("/farmer")}>
               <Home className="w-4 h-4 mr-2" />
-              ड्यासबोर्ड
+              डैशबोर्ड
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/subscription")}>
               <Crown className="w-4 h-4 mr-2" />
