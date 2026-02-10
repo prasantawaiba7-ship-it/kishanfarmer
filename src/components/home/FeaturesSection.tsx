@@ -9,70 +9,72 @@ import {
   Smartphone,
   Users,
 } from "lucide-react";
-
-const features = [
-  {
-    icon: Camera,
-    title: "फोटो अपलोड",
-    description: "बालीको प्रभावित भागको फोटो खिच्नुहोस्।",
-    color: "bg-red-500",
-    lightBg: "bg-red-50 dark:bg-red-950/20",
-  },
-  {
-    icon: Cpu,
-    title: "AI विश्लेषण",
-    description: "उन्नत AI ले रोग र कीरा पहिचान गर्छ।",
-    color: "bg-primary",
-    lightBg: "bg-primary/5",
-  },
-  {
-    icon: FileText,
-    title: "नेपाली रिपोर्ट",
-    description: "विस्तृत रिपोर्ट र PDF डाउनलोड।",
-    color: "bg-secondary",
-    lightBg: "bg-secondary/5",
-  },
-  {
-    icon: Clock,
-    title: "तुरुन्त नतिजा",
-    description: "केही सेकेन्डमा नतिजा प्राप्त।",
-    color: "bg-blue-500",
-    lightBg: "bg-blue-50 dark:bg-blue-950/20",
-  },
-  {
-    icon: MapPin,
-    title: "स्थान आधारित",
-    description: "तपाईंको क्षेत्र अनुसार सुझाव।",
-    color: "bg-teal-500",
-    lightBg: "bg-teal-50 dark:bg-teal-950/20",
-  },
-  {
-    icon: Shield,
-    title: "विशेषज्ञ सुझाव",
-    description: "जैविक र रासायनिक उपचार विकल्प।",
-    color: "bg-purple-500",
-    lightBg: "bg-purple-50 dark:bg-purple-950/20",
-  },
-  {
-    icon: Smartphone,
-    title: "अफलाइन सपोर्ट",
-    description: "इन्टरनेट नभएमा पनि काम गर्छ।",
-    color: "bg-amber-500",
-    lightBg: "bg-amber-50 dark:bg-amber-950/20",
-  },
-  {
-    icon: Users,
-    title: "विशेषज्ञ सम्पर्क",
-    description: "कृषि प्राविधिकसँग सिधै सम्पर्क।",
-    color: "bg-pink-500",
-    lightBg: "bg-pink-50 dark:bg-pink-950/20",
-  },
-];
+import { useLanguage } from "@/hooks/useLanguage";
 
 const FeaturesSection = () => {
+  const { t } = useLanguage();
+
+  const features = [
+    {
+      icon: Camera,
+      titleKey: 'featPhotoUpload',
+      descKey: 'featPhotoUploadDesc',
+      color: "bg-red-500",
+      lightBg: "bg-red-50 dark:bg-red-950/20",
+    },
+    {
+      icon: Cpu,
+      titleKey: 'featAIAnalysis',
+      descKey: 'featAIAnalysisDesc',
+      color: "bg-primary",
+      lightBg: "bg-primary/5",
+    },
+    {
+      icon: FileText,
+      titleKey: 'featReport',
+      descKey: 'featReportDesc',
+      color: "bg-secondary",
+      lightBg: "bg-secondary/5",
+    },
+    {
+      icon: Clock,
+      titleKey: 'featInstantResult',
+      descKey: 'featInstantResultDesc',
+      color: "bg-blue-500",
+      lightBg: "bg-blue-50 dark:bg-blue-950/20",
+    },
+    {
+      icon: MapPin,
+      titleKey: 'featLocationBased',
+      descKey: 'featLocationBasedDesc',
+      color: "bg-teal-500",
+      lightBg: "bg-teal-50 dark:bg-teal-950/20",
+    },
+    {
+      icon: Shield,
+      titleKey: 'featExpertAdvice',
+      descKey: 'featExpertAdviceDesc',
+      color: "bg-purple-500",
+      lightBg: "bg-purple-50 dark:bg-purple-950/20",
+    },
+    {
+      icon: Smartphone,
+      titleKey: 'featOfflineSupport',
+      descKey: 'featOfflineSupportDesc',
+      color: "bg-amber-500",
+      lightBg: "bg-amber-50 dark:bg-amber-950/20",
+    },
+    {
+      icon: Users,
+      titleKey: 'featExpertContact',
+      descKey: 'featExpertContactDesc',
+      color: "bg-pink-500",
+      lightBg: "bg-pink-50 dark:bg-pink-950/20",
+    },
+  ];
+
   return (
     <section className="py-16 sm:py-20 relative overflow-hidden">
-      {/* Background */}
       <div className="absolute inset-0 bg-muted/30 pointer-events-none" />
       <div className="absolute inset-0 bg-mesh pointer-events-none" />
 
@@ -85,18 +87,18 @@ const FeaturesSection = () => {
           className="text-center max-w-2xl mx-auto mb-10 sm:mb-14"
         >
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3">
-            किसानका लागि{" "}
-            <span className="text-gradient">सम्पूर्ण समाधान</span>
+            {t('featuresSubheading')}{" "}
+            <span className="text-gradient">{t('featuresHeading')}</span>
           </h2>
           <p className="text-base sm:text-lg text-muted-foreground">
-            आधुनिक AI र स्थानीय ज्ञानको संयोजन
+            {t('featuresTagline')}
           </p>
         </motion.div>
 
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
           {features.map((feature, index) => (
             <motion.div
-              key={feature.title}
+              key={feature.titleKey}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -110,10 +112,10 @@ const FeaturesSection = () => {
                   <feature.icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                 </div>
                 <h3 className="text-base sm:text-lg font-semibold text-foreground mb-1.5">
-                  {feature.title}
+                  {t(feature.titleKey)}
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  {feature.description}
+                  {t(feature.descKey)}
                 </p>
               </div>
             </motion.div>
