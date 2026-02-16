@@ -77,7 +77,7 @@ export function DiseaseGuideTab() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-md">
+    <div className="mx-auto w-full max-w-md sm:max-w-2xl lg:max-w-4xl">
       <div className="rounded-2xl border bg-card text-card-foreground shadow-sm">
         {/* Header */}
         <div className="flex flex-col space-y-2 p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-t-2xl">
