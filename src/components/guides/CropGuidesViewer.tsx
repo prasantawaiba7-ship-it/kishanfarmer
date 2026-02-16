@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,8 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { useCrops } from '@/hooks/useCrops';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
-import { BookOpen, ChevronLeft, Search, Leaf, Loader2, ChevronDown, ChevronUp, Sparkles, MessageSquare, ArrowRight, ImageOff, Star } from 'lucide-react';
+import { BookOpen, ChevronLeft, Search, Leaf, Loader2, ChevronDown, ChevronUp, Sparkles, MessageSquare, ArrowRight, ImageOff, Star, Mic, MicOff } from 'lucide-react';
+import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
@@ -42,7 +43,32 @@ export function CropGuidesViewer() {
   const [sectionAnswer, setSectionAnswer] = useState<Record<string, string>>({});
   const [sectionLoading, setSectionLoading] = useState<Record<string, boolean>>({});
   const [showSectionAsk, setShowSectionAsk] = useState<Record<string, boolean>>({});
-  
+  const [voiceActiveSection, setVoiceActiveSection] = useState<string | null>(null);
+
+  const { isListening, isSupported: voiceSupported, transcript: voiceTranscript, interimTranscript, startListening, stopListening, resetTranscript } = useVoiceInput({
+    language,
+    onResult: useCallback((text: string) => {
+      if (voiceActiveSection) {
+        setSectionQuestion(prev => ({
+          ...prev,
+          [voiceActiveSection]: (prev[voiceActiveSection] || '') + (prev[voiceActiveSection] ? ' ' : '') + text
+        }));
+      }
+    }, [voiceActiveSection]),
+  });
+
+  const toggleVoiceForSection = useCallback((section: string) => {
+    if (isListening && voiceActiveSection === section) {
+      stopListening();
+      setVoiceActiveSection(null);
+    } else {
+      if (isListening) stopListening();
+      resetTranscript();
+      setVoiceActiveSection(section);
+      startListening();
+    }
+  }, [isListening, voiceActiveSection, startListening, stopListening, resetTranscript]);
+
 
   const filteredGuides = selectedCrop 
     ? guides.filter(g => g.crop_name === selectedCrop)
@@ -216,18 +242,38 @@ export function CropGuidesViewer() {
             >
               <div className="mt-3 space-y-3">
                 <div className="flex gap-2">
-                  <Textarea
-                    placeholder={language === 'ne' ? 'जस्तै: कति दिनमा सिँचाइ गर्ने?' : 'e.g., How often to irrigate?'}
-                    value={question}
-                    onChange={(e) => setSectionQuestion(prev => ({ ...prev, [section]: e.target.value }))}
-                    className="min-h-[50px] text-sm resize-none bg-background"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSectionAsk(section);
-                      }
-                    }}
-                  />
+                  <div className="flex-1 relative">
+                    <Textarea
+                      placeholder={language === 'ne' ? 'जस्तै: कति दिनमा सिँचाइ गर्ने?' : 'e.g., How often to irrigate?'}
+                      value={question}
+                      onChange={(e) => setSectionQuestion(prev => ({ ...prev, [section]: e.target.value }))}
+                      className="min-h-[50px] text-sm resize-none bg-background pr-10"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSectionAsk(section);
+                        }
+                      }}
+                    />
+                    {voiceSupported && (
+                      <button
+                        type="button"
+                        onClick={() => toggleVoiceForSection(section)}
+                        className={`absolute right-2 bottom-2 p-1.5 rounded-full transition-colors touch-manipulation ${
+                          isListening && voiceActiveSection === section
+                            ? 'bg-destructive text-destructive-foreground animate-pulse'
+                            : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'
+                        }`}
+                        title={language === 'ne' ? 'बोलेर लेख्नुहोस्' : 'Voice input'}
+                      >
+                        {isListening && voiceActiveSection === section ? (
+                          <MicOff className="h-4 w-4" />
+                        ) : (
+                          <Mic className="h-4 w-4" />
+                        )}
+                      </button>
+                    )}
+                  </div>
                   <Button
                     onClick={() => handleSectionAsk(section)}
                     disabled={!question.trim() || loading}
@@ -237,6 +283,13 @@ export function CropGuidesViewer() {
                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
                   </Button>
                 </div>
+
+                {isListening && voiceActiveSection === section && interimTranscript && (
+                  <div className="text-xs text-muted-foreground italic px-1 flex items-center gap-1.5">
+                    <Mic className="h-3 w-3 text-destructive animate-pulse" />
+                    {interimTranscript}
+                  </div>
+                )}
 
                 {loading && (
                   <div className="flex items-center gap-2 py-3 justify-center">
