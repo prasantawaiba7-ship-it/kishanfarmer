@@ -26,6 +26,17 @@ export interface DiseaseResult {
   whenToSeekHelp?: string;
   estimatedRecoveryTime?: string;
   nepaliReport?: string;
+  // New consensus fields
+  status?: 'ok' | 'uncertain';
+  consensus_reached?: boolean;
+  notes_for_doctor?: string;
+  top_diseases?: Array<{
+    name: string;
+    name_en?: string;
+    confidence: number;
+    type?: string;
+    short_reason?: string;
+  }>;
 }
 
 interface DiseaseDetectionResultProps {
@@ -282,6 +293,36 @@ export function DiseaseDetectionResult({ result, language, onSpeak, isSpeaking, 
             </p>
           )}
         </div>
+
+        {/* Uncertain / consensus warning */}
+        {result.status === 'uncertain' && (
+          <div className="mt-3 p-2.5 bg-warning/15 rounded-lg border border-warning/30">
+            <p className="text-xs font-medium text-warning flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+              {language === 'ne' 
+                ? 'AI निश्चित छैन — कृपया फरक कोणबाट थप फोटो र लक्षण विवरण पठाउनुहोस्।'
+                : 'AI is uncertain — please provide more photos from different angles and describe symptoms.'}
+            </p>
+            {result.notes_for_doctor && (
+              <p className="text-xs text-muted-foreground mt-1 ml-5">{result.notes_for_doctor}</p>
+            )}
+          </div>
+        )}
+
+        {/* Alternative possibilities */}
+        {result.status === 'uncertain' && result.top_diseases && result.top_diseases.length > 1 && (
+          <div className="mt-2 p-2.5 bg-muted/50 rounded-lg">
+            <p className="text-xs font-medium mb-1.5">
+              {language === 'ne' ? 'सम्भावित विकल्पहरू:' : 'Possible alternatives:'}
+            </p>
+            {result.top_diseases.slice(1, 3).map((d, i) => (
+              <div key={i} className="text-xs text-muted-foreground flex items-center justify-between py-0.5">
+                <span>{d.name_en || d.name}</span>
+                <span className="text-xs opacity-70">{Math.round(d.confidence * 100)}%</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Main content */}

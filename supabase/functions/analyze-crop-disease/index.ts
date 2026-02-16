@@ -5,210 +5,241 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Improved, consistency-focused image analysis prompt
 function getImageAnalysisPrompt(language: string) {
-  if (language === 'en') {
-    return `You are an expert plant pathologist and entomologist specializing in South Asian crops.
-Analyze the provided crop image to identify any diseases, pests, insects, or nutrient deficiencies.
+  const langInstruction = language === 'en'
+    ? 'Respond entirely in English. Use English disease names.'
+    : 'Respond in Nepali for disease names and notes. Use Nepali farmer-friendly terms.';
 
-Return ONLY a JSON object with this exact structure:
+  return `You are a crop disease image diagnosis engine for the Kisan Sathi app.
+The input is a single plant image (mostly leaves) plus optional text context like crop name, location, and crop stage.
+
+Your goals:
+1) Be as CONSISTENT as possible when the same image is analyzed multiple times.
+2) Never be over-confident on uncertain images.
+3) ${langInstruction}
+
+For each image:
+- Carefully inspect the whole leaf (shape, color, spots, edges), background, and overall plant health.
+- Use your best knowledge of plant diseases, pests, and abiotic stresses relevant to Nepal/South Asia.
+
+Respond in STRICT JSON with this schema:
 {
-  "disease_id": "unique_id_like_rice_blast",
+  "status": "ok" | "uncertain",
+  "crop": "string | null",
   "isHealthy": boolean,
-  "issueType": "disease" | "pest" | "deficiency" | "healthy",
-  "detectedIssue": "Disease/Issue Name in English",
-  "detectedIssueEnglish": "English name",
-  "confidence": 0.0-1.0,
-  "severity": "low" | "medium" | "high" | null,
-  "affectedPart": "leaves/stem/fruit/roots/whole plant",
-  "symptoms_keypoints": ["Symptom 1 in English", "Symptom 2 in English"],
-  "causes": ["cause1", "cause2"],
-  "recommended_chemicals": [
+  "top_diseases": [
     {
-      "name": "Chemical name (available in Nepal/South Asia)",
-      "dose": "Dosage and application method",
-      "usage_note": "Usage notes"
+      "disease_id": "unique_snake_case_id",
+      "name": "Disease name${language === 'ne' ? ' (नेपालीमा)' : ''}",
+      "name_en": "English name",
+      "type": "disease" | "pest" | "nutrient_deficiency" | "abiotic" | "healthy",
+      "confidence": 0.0,
+      "severity": "low" | "medium" | "high" | null,
+      "affectedPart": "leaves/stem/fruit/roots/whole plant",
+      "short_reason": "1-2 sentence explanation${language === 'ne' ? ' नेपालीमा' : ''}",
+      "symptoms": ["symptom1", "symptom2"],
+      "causes": ["cause1", "cause2"],
+      "recommended_chemicals": [
+        {
+          "name": "Chemical name (available in Nepal/South Asia)",
+          "dose": "Dosage and application method",
+          "usage_note": "Usage notes"
+        }
+      ],
+      "organic_treatment": {
+        "name": "Organic treatment name",
+        "preparation": "How to prepare",
+        "application": "How to apply"
+      },
+      "management_practices": ["practice1", "practice2"],
+      "preventive_measures": ["prevention1", "prevention2"],
+      "recommended_actions": ["action1", "action2"]
     }
   ],
-  "organic_treatment": {
-    "name": "Organic treatment name",
-    "preparation": "Preparation method",
-    "application": "Application method"
-  },
-  "management_practices": ["Management practice 1", "Management practice 2"],
-  "preventive_measures": ["Prevention 1", "Prevention 2"],
-  "possible_alternatives": ["Other possible disease/pest"],
+  "overall_confidence": 0.0,
+  "notes_for_doctor": "string",
+  "possible_alternatives": ["other disease/pest"],
   "when_to_seek_help": "When to consult an expert",
-  "estimated_recovery_time": "Time duration"
+  "estimated_recovery_time": "Time estimate"
 }
 
-Be practical and specific to Nepali/South Asian farming conditions. Suggest locally available treatments. Respond entirely in English.`;
-  }
+CONFIDENCE AND UNCERTAINTY RULES:
+- overall_confidence must match the top disease probability (0-1).
+- If overall_confidence < 0.6, set "status": "uncertain" and list 2-3 plausible options in top_diseases.
+- When "status": "uncertain", say in "notes_for_doctor" that more photos (different angles, close-ups, healthy vs sick leaves) and text description are needed.
+- Never guess a specific disease with high confidence if the symptom pattern is partial, unclear, or could match multiple problems.
 
-  return `You are an expert plant pathologist and entomologist specializing in Nepali/South Asian crops. 
-Analyze the provided crop image to identify any diseases, pests, insects, or nutrient deficiencies.
+CONSISTENCY RULES:
+- Work deterministically.
+- Prefer the same top disease and similar confidence for the same image.
+- If there is real ambiguity, keep confidence moderate (0.4-0.6) and mark "status": "uncertain" instead of randomly switching diseases.
 
-Return ONLY a JSON object with this exact structure:
-{
-  "disease_id": "unique_id_like_rice_blast",
-  "isHealthy": boolean,
-  "issueType": "disease" | "pest" | "deficiency" | "healthy",
-  "detectedIssue": "Name in Nepali",
-  "detectedIssueEnglish": "English name",
-  "confidence": 0.0-1.0,
-  "severity": "low" | "medium" | "high" | null,
-  "affectedPart": "leaves/stem/fruit/roots/whole plant",
-  "symptoms_keypoints": ["लक्षण १ नेपालीमा", "लक्षण २ नेपालीमा"],
-  "causes": ["cause1", "cause2"],
-  "recommended_chemicals": [
-    {
-      "name": "औषधिको नाम (नेपालमा उपलब्ध)",
-      "dose": "मात्रा र प्रयोग विधि",
-      "usage_note": "प्रयोग सम्बन्धी टिप्पणी"
-    }
-  ],
-  "organic_treatment": {
-    "name": "जैविक उपचार नाम",
-    "preparation": "तयारी विधि",
-    "application": "प्रयोग विधि"
-  },
-  "management_practices": ["व्यवस्थापन विधि १", "व्यवस्थापन विधि २"],
-  "preventive_measures": ["रोकथाम १", "रोकथाम २"],
-  "possible_alternatives": ["अर्को सम्भावित रोग/कीरा"],
-  "when_to_seek_help": "कहिले विशेषज्ञसँग जाने",
-  "estimated_recovery_time": "समय अवधि"
-}
+TREATMENT RULES:
+- Prefer good agronomic practices, sanitation, and IPM methods first.
+- If you mention chemical control, use generic active ingredients and say the exact product/dose must be confirmed with a local agrovet or agriculture officer.
+- Never give exact doses for very toxic or restricted chemicals.
 
-Be practical and specific to Nepali farming conditions. Suggest locally available treatments.`;
+If the image is unclear/blurry or shows no clear disease:
+- "status": "uncertain"
+- overall_confidence low (0.2-0.4)
+- notes_for_doctor explaining the photo is insufficient for safe diagnosis.
+
+Be practical and specific to Nepali/South Asian farming conditions.`;
 }
 
 function getReportPrompt(language: string) {
   if (language === 'en') {
     return `You are an agricultural assistant for farmers in Nepal/South Asia.
+Generate a clear, accurate disease report in English based on structured diagnosis data.
 
-Your job is to generate a clear, accurate disease report in English, based on structured data from an image disease classifier.
-
-### ROLE & STYLE
-- Write only in English.
-- Use simple, farmer-friendly words, not very technical academic language.
+RULES:
+- Write in simple, farmer-friendly English.
 - Be concise but complete.
-- Organize output with short headings and bullet points.
-- Do NOT invent any chemical names or doses that are not present in the input data.
-- If some information is missing in the input, simply skip it instead of guessing.
+- Use short headings and bullet points.
+- Do NOT invent chemical names or doses not in the input data.
+- If info is missing, skip it.
 
-### OUTPUT STRUCTURE
-
-Follow this exact structure:
-
-1) Title
-- One line: "<Crop Name>: <Disease Name> Report"
-
-2) Brief Introduction
-- 2–3 sentences:
-  - Which crop disease is this,
-  - Context of the farmer's field (location and severity),
-  - If confidence is low, clearly mention this is an estimate.
-
-3) Key Symptoms
-- Heading: "Key Symptoms:"
-- Bullet list using only symptoms_keypoints from the input, 4–8 points.
-- Do not invent new symptoms.
-
-4) Treatment (Chemical)
-- Heading: "Treatment:"
-- If recommended_chemicals is not empty:
-  - Each chemical in a separate bullet:
-    - Chemical name,
-    - Dose and application method,
-    - Spray timing/interval if given.
-- If recommended_chemicals is empty or very limited:
-  - Write: "Detailed chemical recommendation not available, please consult your nearest agricultural technician."
-
+STRUCTURE:
+1) Title: "<Crop>: <Disease> Report"
+2) Brief Introduction (2-3 sentences, mention confidence level)
+3) Key Symptoms (bullet list from input only)
+4) Treatment (chemicals from input, or "consult local technician")
 5) Organic Treatment
-- Heading: "Organic Treatment:"
-- Present the organic_treatment data in simple language.
-
 6) Management & Prevention
-- Heading: "Management & Prevention:"
-- Bullet list from management_practices and preventive_measures arrays.
+7) Caution: digital estimate only, consult local agriculture office, follow label instructions
 
-7) Caution & Disclaimer
-- Heading: "Caution:"
-- 2–3 bullets:
-  - This is a digital estimate only,
-  - Consult your nearest agricultural technician or local agriculture knowledge center,
-  - Use chemicals only as per label instructions.
+CONFIDENCE HANDLING:
+- confidence >= 0.8: Normal report.
+- 0.5-0.8: Note "this is an estimate only."
+- < 0.5: Strong warning, no chemical recommendations.
 
-### CONFIDENCE HANDLING
-
-- If confidence >= 0.8: Write the report normally.
-- If 0.5 <= confidence < 0.8: Mention in the introduction that "this result is an estimate only."
-- If confidence < 0.5: Write a strong warning at the start and do not recommend chemicals.
-
-Use only the facts from the JSON input. Do not invent new information.`;
+Use only facts from input. Do not invent information.`;
   }
 
-  return `You are an agricultural assistant for Nepali farmers. 
+  return `तपाईं नेपाली किसानहरूको लागि कृषि सहायक हुनुहुन्छ।
+संरचित डाटाबाट स्पष्ट, सटीक रोग विवरण नेपालीमा बनाउनुहोस्।
 
-Your job is to generate a clear, accurate disease report in Nepali language, based on structured data from an image disease classifier.
+नियमहरू:
+- सरल, किसानमैत्री नेपालीमा लेख्नुहोस्।
+- संक्षिप्त तर पूर्ण।
+- छोटा शीर्षक र बुलेट पोइन्ट।
+- Input मा नभएको औषधिको नाम/मात्रा नबनाउनुहोस्।
 
-### ROLE & STYLE
-- Write only in Nepali.
-- Use simple, farmer-friendly words, not very technical academic language.
-- Be concise but complete.
-- Organize output with short headings and bullet points.
-- Do NOT invent any chemical names or doses that are not present in the input data.
-- If some information is missing in the input, simply skip it instead of guessing.
-
-### OUTPUT STRUCTURE (in Nepali)
-
-Follow this exact structure:
-
-1) शीर्षक (Title)
-- एक लाइनमा: "<बालीको नाम> : <रोगको नाम> को विवरण"
-
-2) संक्षिप्त परिचय
-- 2–3 वाक्यमा:
-  - यो कुन बालीको रोग हो,
-  - किसानको खेत (स्थान र severity) को सन्दर्भ दिनुहोस्,
-  - यदि confidence कम छ भने स्पष्ट रूपमा उल्लेख गर्नुहोस् कि अनुमान हुन सक्छ।
-
-3) रोगको मुख्य लक्षणहरू
-- "मुख्य लक्षणहरू:" शीर्षक राख्नुहोस्।
-- Bullet list मा input मा आएका symptoms_keypoints मात्र प्रयोग गरेर 4–8 बुँदामा लक्षणहरू लेख्नुहोस्।
-- आफ्नो तर्फबाट नयाँ लक्षण नबनाउनुहोस्।
-
-4) उपचार विधि (औषधि केन्द्रित)
-- "उपचार विधि:" शीर्षक राख्नुहोस्।
-- यदि recommended_chemicals खाली छैन भने:
-  - प्रत्येक औषधि अलग bullet मा:
-    - औषधिको नाम,
-    - dose र प्रयोग तरिका,
-    - स्प्रे गर्ने समय/अन्तराल यदि दिइएको छ भने।
-- यदि recommended_chemicals खाली वा बहुत कम छ भने:
-  - सामान्य वाक्य लेख्नुहोस् कि "औषधिको विस्तृत सिफारिस उपलब्ध छैन, नजिकको कृषि प्राविधिकसँग परामर्श गर्नुहोस्।" 
-
+संरचना:
+1) शीर्षक: "<बाली>: <रोग> को विवरण"
+2) संक्षिप्त परिचय (2-3 वाक्य, confidence उल्लेख)
+3) मुख्य लक्षणहरू (input बाट मात्र)
+4) उपचार विधि (औषधि input बाट, वा "नजिकको कृषि प्राविधिकसँग परामर्श")
 5) जैविक उपचार
-- "जैविक उपचार:" शीर्षक राख्नुहोस्।
-- organic_treatment मा दिइएको जानकारी सरल भाषामा राख्नुहोस्।
+6) व्यवस्थापन र रोकथाम
+7) सावधानी: डिजिटल अनुमान मात्र, कृषि कार्यालयसँग परामर्श, लेबल अनुसार प्रयोग
 
-6) खेती व्यवस्थापन र रोकथाम
-- "व्यवस्थापन र रोकथाम:" शीर्षक राख्नुहोस्।
-- management_practices र preventive_measures array मा दिइएका बुँदाहरूलाई bullet list मा राख्नुहोस्।
+CONFIDENCE:
+- >= 0.8: सामान्य report।
+- 0.5-0.8: "अनुमान मात्र हो" उल्लेख।
+- < 0.5: कडा चेतावनी, औषधि सिफारिस नगर्ने।
 
-7) सावधानी तथा Disclaimer
-- "सावधानी:" शीर्षक राख्नुहोस्।
-- 2–3 bullet:
-  - यो डिजिटल अनुमानमात्र हो,
-  - नजिकको कृषि प्राविधिक वा स्थानीय कृषि ज्ञान केन्द्रसँग परामर्श गर्नुपर्ने,
-  - औषधि प्रयोग गर्दा लेबलमा लेखिए अनुसार मात्र प्रयोग गर्नुपर्ने।
+Input को तथ्य मात्र प्रयोग गर्नुहोस्।`;
+}
 
-### CONFIDENCE HANDLING
+// Run a single Gemini analysis call
+async function runSingleAnalysis(
+  apiKey: string,
+  systemPrompt: string,
+  userPrompt: string,
+  imageUrl: string
+): Promise<any> {
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-pro",
+      temperature: 0,
+      top_p: 1,
+      messages: [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: userPrompt },
+            { type: "image_url", image_url: { url: imageUrl } }
+          ]
+        }
+      ],
+      response_format: { type: "json_object" }
+    }),
+  });
 
-- If confidence >= 0.8: सामान्य ढङ्गले report लेख्नुहोस्।
-- If 0.5 <= confidence < 0.8: परिचय भागमा "यो नतिजा अनुमान मात्र हो" लेख्नुहोस्।
-- If confidence < 0.5: सुरूवातमै बलियो चेतावनी लेख्नुहोस् र औषधि सिफारिस नगर्नुहोस्।
+  if (!response.ok) {
+    const status = response.status;
+    if (status === 429 || status === 402) {
+      throw { status, message: status === 429 ? "Service busy. Please try again in a moment." : "Service limit reached. Please try again later." };
+    }
+    const errorText = await response.text();
+    console.error("Analysis call error:", status, errorText);
+    throw { status: 500, message: "Failed to analyze image" };
+  }
 
-Use only the facts from the JSON input. Do not invent new information.`;
+  const data = await response.json();
+  const text = data.choices?.[0]?.message?.content;
+  try {
+    return JSON.parse(text);
+  } catch {
+    console.error("Failed to parse analysis JSON:", text);
+    return null;
+  }
+}
+
+// Consensus: run N calls, pick majority disease
+function buildConsensus(results: any[]): { consensus: any; consensusReached: boolean } {
+  const valid = results.filter(r => r !== null);
+  if (valid.length === 0) {
+    return { consensus: null, consensusReached: false };
+  }
+  if (valid.length === 1) {
+    return { consensus: valid[0], consensusReached: false };
+  }
+
+  // Count top disease names
+  const diseaseCount: Record<string, { count: number; results: any[] }> = {};
+  for (const r of valid) {
+    const topName = r.top_diseases?.[0]?.name_en || r.top_diseases?.[0]?.name || r.detectedIssueEnglish || "unknown";
+    const key = topName.toLowerCase().trim();
+    if (!diseaseCount[key]) diseaseCount[key] = { count: 0, results: [] };
+    diseaseCount[key].count++;
+    diseaseCount[key].results.push(r);
+  }
+
+  // Find majority
+  const sorted = Object.entries(diseaseCount).sort((a, b) => b[1].count - a[1].count);
+  const [topKey, topData] = sorted[0];
+  const majorityThreshold = Math.ceil(valid.length / 2);
+
+  if (topData.count >= majorityThreshold) {
+    // Pick the result with highest confidence from majority group
+    const best = topData.results.reduce((a, b) => {
+      const confA = a.overall_confidence ?? a.confidence ?? 0;
+      const confB = b.overall_confidence ?? b.confidence ?? 0;
+      return confA >= confB ? a : b;
+    });
+    return { consensus: best, consensusReached: true };
+  }
+
+  // No majority — mark uncertain, use result with most detail
+  const bestOverall = valid.reduce((a, b) => {
+    const confA = a.overall_confidence ?? a.confidence ?? 0;
+    const confB = b.overall_confidence ?? b.confidence ?? 0;
+    return confA >= confB ? a : b;
+  });
+  bestOverall.status = "uncertain";
+  if (bestOverall.overall_confidence > 0.5) bestOverall.overall_confidence = 0.5;
+  bestOverall.notes_for_doctor = (bestOverall.notes_for_doctor || "") +
+    " Multiple analyses gave different results. Please provide more photos from different angles.";
+  return { consensus: bestOverall, consensusReached: false };
 }
 
 serve(async (req) => {
@@ -219,179 +250,159 @@ serve(async (req) => {
   try {
     const { imageUrl, cropType, description, language = 'ne', farmerLocation } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
 
-    if (!imageUrl) {
-      throw new Error("Image URL is required");
-    }
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    if (!imageUrl) throw new Error("Image URL is required");
 
     const lang = language === 'en' ? 'en' : 'ne';
+    const systemPrompt = getImageAnalysisPrompt(lang);
 
-    console.log(`Step 1: Analyzing image for disease/pest detection (language: ${lang})...`);
-
-    // Step 1: Get structured data from image
-    const imageAnalysisUserPrompt = lang === 'en'
-      ? `Analyze this crop image for diseases, pests, or nutrient deficiencies.
+    const userPrompt = `Analyze this crop image for diseases, pests, or nutrient deficiencies.
 ${cropType ? `Crop Type: ${cropType}` : ''}
 ${description ? `Farmer's Description: ${description}` : ''}
 ${farmerLocation ? `Location: ${farmerLocation}` : ''}
 
-Provide detailed diagnosis in English with locally available treatments.`
-      : `Analyze this crop image for diseases, pests, or nutrient deficiencies.
-${cropType ? `Crop Type: ${cropType}` : ''}
-${description ? `Farmer's Description: ${description}` : ''}
-${farmerLocation ? `Location: ${farmerLocation}` : ''}
+Provide detailed diagnosis with locally available treatments.`;
 
-Provide detailed diagnosis in Nepali with locally available treatments.`;
+    console.log(`Starting consensus analysis (3 calls, language: ${lang})...`);
 
-    const imageResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
-        temperature: 0,
-        top_p: 1,
-        messages: [
-          { role: "system", content: getImageAnalysisPrompt(lang) },
-          { 
-            role: "user", 
-            content: [
-              { type: "text", text: imageAnalysisUserPrompt },
-              { type: "image_url", image_url: { url: imageUrl } }
-            ]
-          }
-        ],
-        response_format: { type: "json_object" }
-      }),
-    });
+    // Step 1: Run 3 parallel Gemini calls for consensus
+    const analysisPromises = [
+      runSingleAnalysis(LOVABLE_API_KEY, systemPrompt, userPrompt, imageUrl),
+      runSingleAnalysis(LOVABLE_API_KEY, systemPrompt, userPrompt, imageUrl),
+      runSingleAnalysis(LOVABLE_API_KEY, systemPrompt, userPrompt, imageUrl),
+    ];
 
-    if (!imageResponse.ok) {
-      if (imageResponse.status === 429) {
-        return new Response(JSON.stringify({ error: "Service busy. Please try again in a moment." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (imageResponse.status === 402) {
-        return new Response(JSON.stringify({ error: "Service limit reached. Please try again later." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const errorText = await imageResponse.text();
-      console.error("Image analysis error:", imageResponse.status, errorText);
-      throw new Error("Failed to analyze image");
-    }
-
-    const imageData = await imageResponse.json();
-    const analysisText = imageData.choices?.[0]?.message?.content;
-    
-    let structuredData;
+    let results: any[];
     try {
-      structuredData = JSON.parse(analysisText);
-    } catch {
-      console.error("Failed to parse image analysis JSON:", analysisText);
-      structuredData = { 
-        isHealthy: true,
-        detectedIssue: lang === 'en' ? "Could not identify" : "पहिचान गर्न सकिएन",
-        confidence: 0.3,
-        severity: null
-      };
+      results = await Promise.all(analysisPromises);
+    } catch (err: any) {
+      // If rate limited or payment required, return that error
+      if (err.status === 429 || err.status === 402) {
+        return new Response(JSON.stringify({ error: err.message }), {
+          status: err.status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      throw err;
     }
 
-    console.log("Step 1 complete. Detected:", structuredData.detectedIssue);
+    const { consensus: structuredData, consensusReached } = buildConsensus(results);
 
-    // Enrich structured data with crop and location info
+    if (!structuredData) {
+      throw new Error("All analysis calls failed");
+    }
+
+    console.log(`Consensus: ${consensusReached ? 'YES' : 'NO'}. Top disease:`,
+      structuredData.top_diseases?.[0]?.name_en || structuredData.top_diseases?.[0]?.name || "unknown");
+
+    // Extract top disease for backward compatibility
+    const topDisease = structuredData.top_diseases?.[0] || {};
+    const overallConfidence = structuredData.overall_confidence ?? topDisease.confidence ?? 0.5;
+    const status = structuredData.status || (overallConfidence >= 0.6 ? "ok" : "uncertain");
+
+    // Build enriched data for report generation
     const severityLabel = lang === 'en'
-      ? (structuredData.severity === "low" ? "Low" : structuredData.severity === "medium" ? "Medium" : structuredData.severity === "high" ? "Severe" : "Unknown")
-      : (structuredData.severity === "low" ? "सामान्य" : structuredData.severity === "medium" ? "मध्यम" : structuredData.severity === "high" ? "गम्भीर" : "अज्ञात");
+      ? (topDisease.severity === "low" ? "Low" : topDisease.severity === "medium" ? "Medium" : topDisease.severity === "high" ? "Severe" : "Unknown")
+      : (topDisease.severity === "low" ? "सामान्य" : topDisease.severity === "medium" ? "मध्यम" : topDisease.severity === "high" ? "गम्भीर" : "अज्ञात");
 
     const enrichedData = {
       language: lang === 'en' ? "English" : "Nepali",
-      crop_name: cropType || (lang === 'en' ? "Crop" : "बाली"),
-      crop_scientific_name: "",
-      disease_name: structuredData.detectedIssue || structuredData.detectedIssueEnglish || "Unknown",
-      disease_id: structuredData.disease_id || "unknown",
-      confidence: structuredData.confidence || 0.5,
+      crop_name: cropType || structuredData.crop || (lang === 'en' ? "Crop" : "बाली"),
+      disease_name: topDisease.name || topDisease.name_en || "Unknown",
+      disease_id: topDisease.disease_id || "unknown",
+      confidence: overallConfidence,
       severity: severityLabel,
       farmer_location: farmerLocation || "",
-      symptoms_keypoints: structuredData.symptoms_keypoints || structuredData.symptoms || [],
-      recommended_chemicals: structuredData.recommended_chemicals || [],
-      organic_treatment: structuredData.organic_treatment || null,
+      symptoms_keypoints: topDisease.symptoms || [],
+      recommended_chemicals: topDisease.recommended_chemicals || [],
+      organic_treatment: topDisease.organic_treatment || null,
       management_practices: [
-        ...(structuredData.management_practices || []),
-        ...(structuredData.preventive_measures || structuredData.preventiveMeasures || [])
+        ...(topDisease.management_practices || []),
+        ...(topDisease.preventive_measures || [])
       ],
       possible_alternatives: structuredData.possible_alternatives || [],
-      when_to_seek_help: structuredData.when_to_seek_help || structuredData.whenToSeekHelp || "",
-      // Keep original structured data for frontend use
-      ...structuredData
+      when_to_seek_help: structuredData.when_to_seek_help || topDisease.short_reason || "",
+      estimated_recovery_time: structuredData.estimated_recovery_time || "",
+      consensus_status: status,
+      consensus_reached: consensusReached,
+      notes_for_doctor: structuredData.notes_for_doctor || "",
     };
 
-    console.log(`Step 2: Generating ${lang === 'en' ? 'English' : 'Nepali'} report...`);
-
-    // Step 2: Generate report in the correct language
-    const reportResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        temperature: 0,
-        top_p: 1,
-        messages: [
-          { role: "system", content: getReportPrompt(lang) },
-          { 
-            role: "user", 
-            content: `Generate a ${lang === 'en' ? 'English' : 'Nepali'} disease report using this data:\n\n${JSON.stringify(enrichedData, null, 2)}`
-          }
-        ],
-      }),
-    });
-
+    // Step 2: Generate report (skip if very uncertain)
     let nepaliReport = "";
-    if (reportResponse.ok) {
-      const reportData = await reportResponse.json();
-      nepaliReport = reportData.choices?.[0]?.message?.content || "";
-      console.log("Step 2 complete. Report generated.");
-    } else {
-      console.error("Report generation failed, using structured data only");
+    if (overallConfidence >= 0.3) {
+      console.log(`Generating ${lang === 'en' ? 'English' : 'Nepali'} report...`);
+      try {
+        const reportResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            temperature: 0,
+            top_p: 1,
+            messages: [
+              { role: "system", content: getReportPrompt(lang) },
+              {
+                role: "user",
+                content: `Generate a ${lang === 'en' ? 'English' : 'Nepali'} disease report:\n\n${JSON.stringify(enrichedData, null, 2)}`
+              }
+            ],
+          }),
+        });
+        if (reportResponse.ok) {
+          const reportData = await reportResponse.json();
+          nepaliReport = reportData.choices?.[0]?.message?.content || "";
+        }
+      } catch (e) {
+        console.error("Report generation failed:", e);
+      }
     }
 
-    // Return both structured data and formatted report
-    const defaultTreatmentFallback = lang === 'en' ? "Consult an agricultural technician" : "कृषि प्राविधिकसँग सल्लाह लिनुहोस्";
+    // Build backward-compatible response
+    const defaultFallback = lang === 'en' ? "Consult an agricultural technician" : "कृषि प्राविधिकसँग सल्लाह लिनुहोस्";
 
     const finalResponse = {
-      ...enrichedData,
+      // New structured fields
+      status,
+      consensus_reached: consensusReached,
+      top_diseases: structuredData.top_diseases || [],
+      overall_confidence: overallConfidence,
+      notes_for_doctor: enrichedData.notes_for_doctor,
       nepaliReport,
-      // Ensure backward compatibility with existing frontend
-      isHealthy: enrichedData.isHealthy,
-      issueType: enrichedData.issueType || "disease",
+      // Backward-compatible fields
+      isHealthy: structuredData.isHealthy ?? (topDisease.type === "healthy"),
+      issueType: topDisease.type || "disease",
       detectedIssue: enrichedData.disease_name,
-      detectedIssueEnglish: enrichedData.detectedIssueEnglish,
-      confidence: enrichedData.confidence,
-      severity: structuredData.severity,
-      affectedPart: enrichedData.affectedPart,
+      detectedIssueEnglish: topDisease.name_en || topDisease.name || "",
+      disease_id: enrichedData.disease_id,
+      confidence: overallConfidence,
+      severity: topDisease.severity || null,
+      affectedPart: topDisease.affectedPart || "",
       symptoms: enrichedData.symptoms_keypoints,
-      causes: enrichedData.causes,
-      organicTreatment: enrichedData.organic_treatment ? 
-        `${enrichedData.organic_treatment.name}: ${enrichedData.organic_treatment.preparation}. ${enrichedData.organic_treatment.application}` : "",
-      chemicalTreatment: enrichedData.recommended_chemicals?.[0] ? 
-        `${enrichedData.recommended_chemicals[0].name} - ${enrichedData.recommended_chemicals[0].dose}` : "",
-      treatment: enrichedData.recommended_chemicals?.map((c: { name: string; dose: string }) => `${c.name}: ${c.dose}`).join('\n') || 
-                 enrichedData.organic_treatment?.application || defaultTreatmentFallback,
+      symptoms_keypoints: enrichedData.symptoms_keypoints,
+      causes: topDisease.causes || [],
+      recommended_chemicals: enrichedData.recommended_chemicals,
+      organic_treatment: enrichedData.organic_treatment,
+      organicTreatment: enrichedData.organic_treatment
+        ? `${enrichedData.organic_treatment.name}: ${enrichedData.organic_treatment.preparation}. ${enrichedData.organic_treatment.application}`
+        : "",
+      chemicalTreatment: enrichedData.recommended_chemicals?.[0]
+        ? `${enrichedData.recommended_chemicals[0].name} - ${enrichedData.recommended_chemicals[0].dose}`
+        : "",
+      treatment: enrichedData.recommended_chemicals?.map((c: { name: string; dose: string }) => `${c.name}: ${c.dose}`).join('\n')
+        || enrichedData.organic_treatment?.application || defaultFallback,
       prevention: enrichedData.management_practices,
       preventiveMeasures: enrichedData.management_practices,
+      management_practices: enrichedData.management_practices,
+      possible_alternatives: enrichedData.possible_alternatives,
       whenToSeekHelp: enrichedData.when_to_seek_help,
-      estimatedRecoveryTime: enrichedData.estimated_recovery_time
+      when_to_seek_help: enrichedData.when_to_seek_help,
+      estimatedRecoveryTime: enrichedData.estimated_recovery_time,
+      estimated_recovery_time: enrichedData.estimated_recovery_time,
     };
 
     return new Response(JSON.stringify(finalResponse), {
