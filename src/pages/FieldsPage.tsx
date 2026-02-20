@@ -22,6 +22,7 @@ import { FieldsGuideTab } from '@/components/fields/FieldsGuideTab';
 import { Plus, Loader2, Mountain, Leaf } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Field } from '@/hooks/useFields';
+import { FieldsGuidedTour } from '@/components/fields/FieldsGuidedTour';
 
 const FieldsPage = () => {
   const navigate = useNavigate();
@@ -99,7 +100,7 @@ const FieldsPage = () => {
           <div className="container mx-auto px-4 max-w-5xl">
             {/* HEADER */}
             <div className="flex items-center justify-between mb-5">
-              <div>
+              <div data-tour="page-title">
                 <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
                   <Mountain className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                   {language === 'ne' ? 'मेरो खेत' : 'My Field'}
@@ -108,20 +109,23 @@ const FieldsPage = () => {
                   {language === 'ne' ? 'खेत र बाली व्यवस्थापन' : 'Field & Crop Management'}
                 </p>
               </div>
-              <Button className="gap-1.5 h-10 px-4" onClick={() => setIsAddFieldOpen(true)}>
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">{t('newField')}</span>
-                <span className="sm:hidden">{t('addShort')}</span>
-              </Button>
+              <div className="flex items-center gap-2">
+                <FieldsGuidedTour />
+                <Button data-tour="add-field-btn" className="gap-1.5 h-10 px-4" onClick={() => setIsAddFieldOpen(true)}>
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">{t('newField')}</span>
+                  <span className="sm:hidden">{t('addShort')}</span>
+                </Button>
+              </div>
             </div>
 
             {/* MAIN TABS: Fields / Guide */}
             <Tabs defaultValue="fields" className="w-full">
-              <TabsList className="w-full grid grid-cols-2 h-12 mb-5">
+              <TabsList data-tour="tabs" className="w-full grid grid-cols-2 h-12 mb-5">
                 <TabsTrigger value="fields" className="text-sm sm:text-base gap-2 font-semibold">
                   🌾 {language === 'ne' ? 'खेतहरू' : 'Fields'}
                 </TabsTrigger>
-                <TabsTrigger value="guide" className="text-sm sm:text-base gap-2 font-semibold">
+                <TabsTrigger data-tour="guide-tab" value="guide" className="text-sm sm:text-base gap-2 font-semibold">
                   📘 {language === 'ne' ? 'गाइड' : 'Guide'}
                 </TabsTrigger>
               </TabsList>

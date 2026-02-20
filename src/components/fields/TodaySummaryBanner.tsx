@@ -48,7 +48,7 @@ export function TodaySummaryBanner({ seasons, fieldCount }: TodaySummaryBannerPr
   if (fieldCount === 0) return null;
 
   return (
-    <div className="rounded-xl bg-primary/5 border border-primary/15 p-3 sm:p-4">
+    <div data-tour="today-summary" className="rounded-xl bg-primary/5 border border-primary/15 p-3 sm:p-4">
       <h3 className="text-sm font-semibold text-primary flex items-center gap-2 mb-2">
         <CalendarCheck className="h-4 w-4" />
         {language === 'ne' ? 'आजको सारांश' : "Today's Summary"}
