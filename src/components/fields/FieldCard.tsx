@@ -61,6 +61,7 @@ export function FieldCard({ field, seasons, crops, isSelected, onSelect, onDelet
 
   return (
     <Card
+      data-tour="field-card"
       className={`cursor-pointer transition-all hover:shadow-md active:scale-[0.98] ${
         isSelected ? 'ring-2 ring-primary shadow-md' : ''
       }`}
