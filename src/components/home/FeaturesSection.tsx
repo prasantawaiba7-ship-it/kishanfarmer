@@ -19,57 +19,57 @@ const FeaturesSection = () => {
       icon: Camera,
       titleKey: 'featPhotoUpload',
       descKey: 'featPhotoUploadDesc',
-      color: "bg-red-500",
-      lightBg: "bg-red-50 dark:bg-red-950/20",
+      color: "bg-primary",
+      lightBg: "bg-primary/5",
     },
     {
       icon: Cpu,
       titleKey: 'featAIAnalysis',
       descKey: 'featAIAnalysisDesc',
-      color: "bg-primary",
-      lightBg: "bg-primary/5",
+      color: "bg-secondary",
+      lightBg: "bg-secondary/5",
     },
     {
       icon: FileText,
       titleKey: 'featReport',
       descKey: 'featReportDesc',
-      color: "bg-secondary",
-      lightBg: "bg-secondary/5",
+      color: "bg-accent",
+      lightBg: "bg-accent/8",
     },
     {
       icon: Clock,
       titleKey: 'featInstantResult',
       descKey: 'featInstantResultDesc',
-      color: "bg-blue-500",
-      lightBg: "bg-blue-50 dark:bg-blue-950/20",
+      color: "bg-primary",
+      lightBg: "bg-primary/5",
     },
     {
       icon: MapPin,
       titleKey: 'featLocationBased',
       descKey: 'featLocationBasedDesc',
-      color: "bg-teal-500",
-      lightBg: "bg-teal-50 dark:bg-teal-950/20",
+      color: "bg-secondary",
+      lightBg: "bg-secondary/5",
     },
     {
       icon: Shield,
       titleKey: 'featExpertAdvice',
       descKey: 'featExpertAdviceDesc',
-      color: "bg-purple-500",
-      lightBg: "bg-purple-50 dark:bg-purple-950/20",
+      color: "bg-primary",
+      lightBg: "bg-primary/5",
     },
     {
       icon: Smartphone,
       titleKey: 'featOfflineSupport',
       descKey: 'featOfflineSupportDesc',
-      color: "bg-amber-500",
-      lightBg: "bg-amber-50 dark:bg-amber-950/20",
+      color: "bg-accent",
+      lightBg: "bg-accent/8",
     },
     {
       icon: Users,
       titleKey: 'featExpertContact',
       descKey: 'featExpertContactDesc',
-      color: "bg-pink-500",
-      lightBg: "bg-pink-50 dark:bg-pink-950/20",
+      color: "bg-secondary",
+      lightBg: "bg-secondary/5",
     },
   ];
 
@@ -105,9 +105,9 @@ const FeaturesSection = () => {
               transition={{ duration: 0.4, delay: index * 0.05 }}
               className="group"
             >
-              <div className={`${feature.lightBg} rounded-2xl p-5 sm:p-6 h-full border border-border/40 hover:border-primary/30 transition-all duration-300 hover:shadow-lg`}>
+              <div className={`${feature.lightBg} rounded-2xl p-5 sm:p-6 h-full border border-border/30 hover:border-primary/20 transition-all duration-300 hover:shadow-md`}>
                 <div
-                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl ${feature.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-md`}
+                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl ${feature.color} flex items-center justify-center mb-4 group-hover:scale-105 transition-transform`}
                 >
                   <feature.icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                 </div>
