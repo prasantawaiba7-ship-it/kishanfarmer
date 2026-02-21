@@ -75,7 +75,6 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <OnScreenAssistant />
-              <UserBar />
             </BrowserRouter>
           </TooltipProvider>
         </LanguageProvider>
