@@ -5,8 +5,8 @@ import { NepaliDiseaseDetector } from '@/components/ai/NepaliDiseaseDetector';
 import { FloatingVoiceButton } from '@/components/ai/FloatingVoiceButton';
 import { OutbreakAlertsBanner } from '@/components/disease/OutbreakAlertsBanner';
 import { DiseasePrediction } from '@/components/disease/DiseasePrediction';
-import { DiagnosisCaseSubmit } from '@/components/diagnosis/DiagnosisCaseSubmit';
-import { MyDiagnosisCases } from '@/components/diagnosis/MyDiagnosisCases';
+import { AskExpertForm } from '@/components/diagnosis/AskExpertForm';
+import { ExpertCaseHistory } from '@/components/diagnosis/ExpertCaseHistory';
 import { PreventionTipsSection } from '@/components/disease/PreventionTipsSection';
 import { DiseaseGuideTab } from '@/components/disease/DiseaseGuideTab';
 import { useAuth } from '@/hooks/useAuth';
@@ -72,10 +72,10 @@ export default function DiseaseDetection() {
             </TabsContent>
 
             <TabsContent value="expert" className="space-y-6">
-              <DiagnosisCaseSubmit />
+              <AskExpertForm />
               {user && (
                 <div className="mt-6">
-                  <MyDiagnosisCases />
+                  <ExpertCaseHistory />
                 </div>
               )}
             </TabsContent>
