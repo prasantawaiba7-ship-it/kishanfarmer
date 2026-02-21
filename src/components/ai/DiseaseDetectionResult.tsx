@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { 
   AlertTriangle, CheckCircle, Leaf, Bug, Droplet, 
   Activity, Stethoscope, ShieldCheck, Clock, Volume2, VolumeX, ChevronDown, ChevronUp,
-  Share2, MessageCircle, Phone, Save, Check
+  Share2, MessageCircle, Phone, Save, Check, User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -56,9 +56,10 @@ interface DiseaseDetectionResultProps {
   onSave?: () => void;
   isSaved?: boolean;
   imageUrl?: string;
+  onAskExpert?: () => void;
 }
 
-export function DiseaseDetectionResult({ result, language, onSpeak, isSpeaking, onSave, isSaved, imageUrl }: DiseaseDetectionResultProps) {
+export function DiseaseDetectionResult({ result, language, onSpeak, isSpeaking, onSave, isSaved, imageUrl, onAskExpert }: DiseaseDetectionResultProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
 
@@ -549,6 +550,29 @@ export function DiseaseDetectionResult({ result, language, onSpeak, isSpeaking, 
           </div>
         </div>
         
+        {/* Ask Expert CTA */}
+        {onAskExpert && (
+          <div className={`p-3 rounded-xl border ${
+            result.confidence < 0.6 || result.status === 'uncertain'
+              ? 'bg-warning/10 border-warning/30'
+              : 'bg-muted/30 border-border/40'
+          }`}>
+            <p className="text-xs text-foreground mb-2">
+              {result.confidence < 0.6 || result.status === 'uncertain'
+                ? (language === 'ne' ? 'AI पूर्ण निश्चिन्त छैन।' : 'AI is not fully confident.')
+                : (language === 'ne' ? 'पुष्टि चाहनुहुन्छ?' : 'Want confirmation?')}
+            </p>
+            <Button
+              onClick={onAskExpert}
+              className="w-full h-10 text-sm font-semibold"
+              size="sm"
+            >
+              <User className="w-4 h-4 mr-1.5" />
+              {language === 'ne' ? 'विज्ञसँग सोध्नुहोस्' : 'Ask an Expert'}
+            </Button>
+          </div>
+        )}
+
         {/* Share buttons */}
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">

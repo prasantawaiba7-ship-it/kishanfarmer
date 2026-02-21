@@ -8,7 +8,7 @@ import {
   Download, Leaf, Bug, Shield, Pill, BookOpen, ChevronDown,
   Droplets, ThermometerSun, Wind, Mic, MicOff, Share2, 
   MessageCircle, Phone, History, Calendar, Bell, Image, Grid3X3,
-  MapPin, ImageDown, FileText
+  MapPin, ImageDown, FileText, User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -385,7 +385,17 @@ const normalizeText = (value: string) =>
     .toLowerCase()
     .trim();
 
-export function NepaliDiseaseDetector() {
+interface NepaliDiseaseDetectorProps {
+  onAskExpert?: (prefill: {
+    imageDataUrl?: string;
+    cropName?: string;
+    aiDisease?: string;
+    aiConfidence?: number;
+    aiRecommendation?: string;
+  }) => void;
+}
+
+export function NepaliDiseaseDetector({ onAskExpert }: NepaliDiseaseDetectorProps = {}) {
   const [selectedCrop, setSelectedCrop] = useState<string>('');
   const [cropName, setCropName] = useState<string>('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -1652,6 +1662,35 @@ export function NepaliDiseaseDetector() {
                       <span className="hidden sm:inline">{t('sendToOfficer')}</span>
                       <span className="sm:hidden">{t('sendToOfficerShort')}</span>
                     </Button>
+
+                    {/* Ask Expert CTA - shown prominently when confidence is low or always available */}
+                    {onAskExpert && (
+                      <div className={`p-4 rounded-xl border-2 ${
+                        result.confidence < 0.6 
+                          ? 'bg-warning/10 border-warning/30' 
+                          : 'bg-muted/30 border-border/40'
+                      }`}>
+                        <p className="text-sm text-foreground mb-2.5 font-medium">
+                          {result.confidence < 0.6 
+                            ? (language === 'ne' ? 'AI पूर्ण निश्चिन्त छैन। मानव कृषि विज्ञसँग सोध्न सक्नुहुन्छ।' : 'AI is not fully confident. You can ask a human expert.')
+                            : (language === 'ne' ? 'थप पुष्टि चाहनुहुन्छ? विज्ञसँग सोध्नुहोस्।' : 'Want confirmation? Ask an expert.')}
+                        </p>
+                        <Button
+                          onClick={() => onAskExpert({
+                            imageDataUrl: image || undefined,
+                            cropName: selectedCrop,
+                            aiDisease: result.detectedIssue,
+                            aiConfidence: result.confidence,
+                            aiRecommendation: result.treatment,
+                          })}
+                          className="w-full h-12 text-base font-semibold"
+                          size="lg"
+                        >
+                          <User className="w-5 h-5 mr-2" />
+                          {language === 'ne' ? 'विज्ञसँग सोध्नुहोस्' : 'Ask an Expert'}
+                        </Button>
+                      </div>
+                    )}
 
                     {/* New analysis button */}
                     <Button 
