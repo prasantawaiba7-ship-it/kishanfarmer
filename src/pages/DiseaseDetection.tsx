@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -13,10 +14,33 @@ import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+interface AiPrefill {
+  imageDataUrl?: string;
+  cropName?: string;
+  cropId?: number;
+  aiDisease?: string;
+  aiConfidence?: number;
+  aiRecommendation?: string;
+}
+
 export default function DiseaseDetection() {
   const { user } = useAuth();
   const { t, language } = useLanguage();
+  const [activeTab, setActiveTab] = useState('ai');
+  const [expertPrefill, setExpertPrefill] = useState<AiPrefill | undefined>();
   
+  // Called when farmer clicks "विज्ञसँग सोध्नुहोस्" from AI result
+  const handleAskExpert = useCallback((prefill: {
+    imageDataUrl?: string;
+    cropName?: string;
+    aiDisease?: string;
+    aiConfidence?: number;
+    aiRecommendation?: string;
+  }) => {
+    setExpertPrefill(prefill);
+    setActiveTab('expert');
+  }, []);
+
   const steps = [
     { step: '१', title: t('stepSelectCrop'), desc: t('stepCropType') },
     { step: '२', title: t('stepTakePhoto'), desc: t('stepDiseased') },
@@ -50,7 +74,7 @@ export default function DiseaseDetection() {
 
           <OutbreakAlertsBanner />
 
-          <Tabs defaultValue="ai" className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1 p-1 bg-muted/50 rounded-xl">
               <TabsTrigger value="ai" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm py-2.5">{t('aiInstantCheck')}</TabsTrigger>
               <TabsTrigger value="guide" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm py-2.5">{language === 'ne' ? 'रोग गाइड' : 'Disease Guide'}</TabsTrigger>
@@ -59,7 +83,7 @@ export default function DiseaseDetection() {
             </TabsList>
 
             <TabsContent value="ai" className="space-y-6">
-              <NepaliDiseaseDetector />
+              <NepaliDiseaseDetector onAskExpert={handleAskExpert} />
               {user && (
                 <div className="mt-6">
                   <DiseasePrediction />
@@ -72,7 +96,10 @@ export default function DiseaseDetection() {
             </TabsContent>
 
             <TabsContent value="expert" className="space-y-6">
-              <AskExpertForm />
+              <AskExpertForm 
+                prefill={expertPrefill} 
+                onSubmitted={() => setExpertPrefill(undefined)} 
+              />
               {user && (
                 <div className="mt-6">
                   <ExpertCaseHistory />
