@@ -35,12 +35,15 @@ export default function DiseaseDetection() {
       <div className="min-h-screen bg-background overflow-y-auto">
         <Header />
         
-        <main className="container mx-auto px-4 pt-20 pb-32 max-w-4xl">
+        <main className="container mx-auto px-4 pt-20 sm:pt-24 pb-32 max-w-4xl">
           <div className="text-center mb-8">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">
-              🌿 {t('diseasePageTitle')}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/8 border border-primary/15 mb-4">
+              <span className="text-sm font-medium text-primary">🌿 {t('diseasePageTitle')}</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 text-foreground">
+              {t('diseasePageTitle')}
             </h1>
-            <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
+            <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto leading-relaxed">
               {t('diseasePageSubtitle')}
             </p>
           </div>
@@ -48,11 +51,11 @@ export default function DiseaseDetection() {
           <OutbreakAlertsBanner />
 
           <Tabs defaultValue="ai" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1">
-              <TabsTrigger value="ai">{t('aiInstantCheck')}</TabsTrigger>
-              <TabsTrigger value="guide">{language === 'ne' ? 'रोग गाइड' : 'Disease Guide'}</TabsTrigger>
-              <TabsTrigger value="expert">{t('askExpert')}</TabsTrigger>
-              <TabsTrigger value="prevention">{t('preventionTips') || 'रोकथाम'}</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1 p-1 bg-muted/50 rounded-xl">
+              <TabsTrigger value="ai" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm py-2.5">{t('aiInstantCheck')}</TabsTrigger>
+              <TabsTrigger value="guide" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm py-2.5">{language === 'ne' ? 'रोग गाइड' : 'Disease Guide'}</TabsTrigger>
+              <TabsTrigger value="expert" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm py-2.5">{t('askExpert')}</TabsTrigger>
+              <TabsTrigger value="prevention" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm py-2.5">{t('preventionTips') || 'रोकथाम'}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="ai" className="space-y-6">
@@ -82,29 +85,29 @@ export default function DiseaseDetection() {
             </TabsContent>
           </Tabs>
 
-          <div className="mt-12 p-4 sm:p-6 bg-muted/50 rounded-2xl">
-            <h2 className="text-lg sm:text-xl font-semibold mb-4 text-center">
+          <div className="mt-12 p-5 sm:p-8 bg-card rounded-2xl border border-border/50 shadow-sm">
+            <h2 className="text-lg sm:text-xl font-semibold mb-5 text-center text-foreground">
               {t('howToUse')}
             </h2>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 sm:gap-4">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-4 sm:gap-5">
               {steps.map((item, i) => (
                 <div key={i} className="text-center">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm sm:text-base">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2.5 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm sm:text-base border border-primary/15">
                     {item.step}
                   </div>
-                  <h3 className="font-medium text-xs sm:text-sm mb-0.5">{item.title}</h3>
+                  <h3 className="font-medium text-xs sm:text-sm mb-0.5 text-foreground">{item.title}</h3>
                   <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">{item.desc}</p>
                 </div>
               ))}
             </div>
 
-            <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-warning/10 rounded-xl border border-warning/20">
-              <h3 className="font-medium mb-2 flex items-center gap-2 text-sm sm:text-base">
-                {t('photoTipsTitle')}
+            <div className="mt-5 sm:mt-7 p-4 sm:p-5 bg-accent/8 rounded-xl border border-accent/15">
+              <h3 className="font-medium mb-2 flex items-center gap-2 text-sm sm:text-base text-foreground">
+                💡 {t('photoTipsTitle')}
               </h3>
-              <ul className="text-xs sm:text-sm text-muted-foreground space-y-1">
-                <li>{t('photoTip1')}</li>
-                <li>{t('photoTip2')}</li>
+              <ul className="text-xs sm:text-sm text-muted-foreground space-y-1.5">
+                <li>• {t('photoTip1')}</li>
+                <li>• {t('photoTip2')}</li>
               </ul>
             </div>
           </div>

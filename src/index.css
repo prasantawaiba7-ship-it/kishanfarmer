@@ -38,14 +38,14 @@
     --accent: 45 87% 63%;
     --accent-foreground: 220 20% 16%;
 
-    /* Semantic colors */
-    --destructive: 0 72% 51%;
+    /* Semantic colors — muted, non-alarming */
+    --destructive: 0 55% 48%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 153 55% 27%;
+    --success: 153 45% 32%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
+    --warning: 38 75% 52%;
     --warning-foreground: 25 25% 15%;
 
     /* Borders & Inputs */
@@ -88,14 +88,14 @@
     --glass-border: rgba(255, 255, 255, 0.6);
     --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
 
-    /* Enhanced Shadows */
-    --shadow-sm: 0 1px 3px 0 hsl(25 25% 15% / 0.03), 0 1px 2px -1px hsl(25 25% 15% / 0.03);
-    --shadow-md: 0 4px 8px -2px hsl(25 25% 15% / 0.05), 0 2px 4px -2px hsl(25 25% 15% / 0.03);
-    --shadow-lg: 0 12px 28px -8px hsl(25 25% 15% / 0.08), 0 8px 12px -6px hsl(25 25% 15% / 0.04);
-    --shadow-xl: 0 24px 50px -12px hsl(25 25% 15% / 0.12);
-    --shadow-glow: 0 0 24px hsl(153 55% 27% / 0.15);
-    --shadow-glow-accent: 0 0 24px hsl(45 87% 63% / 0.2);
-    --shadow-chat-bubble: 0 2px 8px hsl(25 25% 15% / 0.04);
+    /* Enhanced Shadows — soft, calm */
+    --shadow-sm: 0 1px 2px 0 hsl(25 25% 15% / 0.03);
+    --shadow-md: 0 4px 12px -4px hsl(25 25% 15% / 0.06);
+    --shadow-lg: 0 10px 24px -8px hsl(25 25% 15% / 0.07), 0 4px 8px -4px hsl(25 25% 15% / 0.03);
+    --shadow-xl: 0 20px 40px -12px hsl(25 25% 15% / 0.1);
+    --shadow-glow: 0 0 20px hsl(153 55% 27% / 0.12);
+    --shadow-glow-accent: 0 0 20px hsl(45 87% 63% / 0.15);
+    --shadow-chat-bubble: 0 1px 6px hsl(25 25% 15% / 0.04);
   }
 
   .dark {
@@ -263,14 +263,14 @@
     100% { background-position: -200% 0; }
   }
 
-  /* Interactive Card Hover */
+  /* Interactive Card Hover — gentle lift */
   .card-interactive {
     @apply transition-all duration-300 ease-out;
   }
 
   .card-interactive:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-xl);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
   }
 
   /* Premium Feature Card */

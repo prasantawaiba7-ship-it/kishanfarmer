@@ -36,14 +36,14 @@ export function KrishiMitraBar({ onOpenAssistant, initialAction = null }: Krishi
             exit={{ opacity: 0, y: 100 }}
             className="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-6 md:w-auto"
           >
-            <div className="bg-gradient-to-r from-primary via-primary/90 to-accent rounded-full shadow-2xl p-2.5 sm:p-3 backdrop-blur-sm border border-primary-foreground/10" style={{ boxShadow: '0 0 20px hsl(153 55% 27% / 0.2), 0 8px 32px rgba(0,0,0,0.12)' }}>
+            <div className="bg-gradient-to-r from-primary via-primary/90 to-accent rounded-full p-2.5 sm:p-3 backdrop-blur-sm border border-primary-foreground/10" style={{ boxShadow: '0 0 16px hsl(153 55% 27% / 0.15), 0 6px 24px rgba(0,0,0,0.08)' }}>
               <div className="flex items-center gap-3">
                 {/* Logo & Name */}
                 <div 
                   className="flex items-center gap-2 cursor-pointer" 
                   onClick={() => handleAction('chat')}
                 >
-                  <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center animate-pulse">
+                  <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center glow-pulse">
                     <Sparkles className="w-5 h-5 text-primary-foreground drop-shadow-sm" />
                   </div>
                   <div className="hidden sm:block">

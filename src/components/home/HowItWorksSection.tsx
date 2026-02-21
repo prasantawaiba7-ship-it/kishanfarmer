@@ -14,7 +14,7 @@ const HowItWorksSection = () => {
       titleKey: 'howStep1Title',
       descKey: 'howStep1Desc',
       tipKey: 'howStep1Tip',
-      color: "bg-red-500",
+      color: "bg-primary",
     },
     {
       number: language === 'ne' ? "२" : "2",

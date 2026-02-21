@@ -12,10 +12,10 @@ const QuickActionsGrid = () => {
       label: t('diseaseDetection'),
       sublabel: t('detectFromPhoto'),
       href: "/disease-detection",
-      color: "bg-red-500",
-      bgColor: "bg-red-50 dark:bg-red-950/30",
-      borderColor: "border-red-200 dark:border-red-900/50",
-      hoverColor: "hover:border-red-300 dark:hover:border-red-800",
+      color: "bg-primary",
+      bgColor: "bg-primary/5",
+      borderColor: "border-primary/15",
+      hoverColor: "hover:border-primary/30",
     },
     {
       icon: Store,
@@ -96,7 +96,7 @@ const QuickActionsGrid = () => {
             >
               <Link to={action.href}>
                 <div
-                  className={`relative rounded-2xl p-5 sm:p-6 ${action.bgColor} border ${action.borderColor} ${action.hoverColor} transition-all duration-200 hover:shadow-lg hover:-translate-y-1 active:scale-[0.97] cursor-pointer group min-h-[120px] flex flex-col items-center justify-center`}
+                  className={`relative rounded-2xl p-5 sm:p-6 ${action.bgColor} border ${action.borderColor} ${action.hoverColor} transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer group min-h-[120px] flex flex-col items-center justify-center`}
                 >
                   <div
                     className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${action.color} flex items-center justify-center mb-3 shadow-md group-hover:scale-105 transition-transform`}
