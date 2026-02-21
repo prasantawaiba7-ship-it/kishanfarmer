@@ -11,16 +11,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useCrops } from '@/hooks/useCrops';
-import { useSubmitDiagnosisCase } from '@/hooks/useDiagnosisCases';
+import { useSubmitExpertCase } from '@/hooks/useExpertCases';
 import { uploadDiseaseImage } from '@/lib/uploadDiseaseImage';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLocationData } from '@/hooks/useLocationData';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
-import type { Database } from '@/integrations/supabase/types';
-
-type DiagnosisAngleType = Database['public']['Enums']['diagnosis_angle_type'];
 
 interface AiPrefill {
   imageDataUrl?: string;
@@ -49,7 +45,7 @@ export function AskExpertForm({ prefill, onSubmitted }: AskExpertFormProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const { activeCrops: crops } = useCrops();
-  const submitCase = useSubmitDiagnosisCase();
+  const submitCase = useSubmitExpertCase();
   const { language } = useLanguage();
   const { 
     provinces, districts, 
@@ -62,9 +58,9 @@ export function AskExpertForm({ prefill, onSubmitted }: AskExpertFormProps) {
   );
   const [problemType, setProblemType] = useState<string>(prefill?.aiDisease ? 'disease' : '');
   const [farmerQuestion, setFarmerQuestion] = useState('');
-  const [priority, setPriority] = useState<'normal' | 'urgent'>('normal');
-  const [images, setImages] = useState<{ dataUrl: string; angleType: DiagnosisAngleType }[]>(
-    prefill?.imageDataUrl ? [{ dataUrl: prefill.imageDataUrl, angleType: 'leaf_closeup' }] : []
+  const [priority, setPriority] = useState<'low' | 'high'>('low');
+  const [images, setImages] = useState<{ dataUrl: string }[]>(
+    prefill?.imageDataUrl ? [{ dataUrl: prefill.imageDataUrl }] : []
   );
   const [isUploading, setIsUploading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -74,7 +70,7 @@ export function AskExpertForm({ prefill, onSubmitted }: AskExpertFormProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // Voice input
-  const { isListening, isSupported: voiceSupported, transcript, interimTranscript, startListening, stopListening } = useVoiceInput({
+  const { isListening, isSupported: voiceSupported, interimTranscript, startListening, stopListening } = useVoiceInput({
     language,
     onResult: (text) => {
       setFarmerQuestion(prev => prev ? `${prev} ${text}` : text);
@@ -93,7 +89,7 @@ export function AskExpertForm({ prefill, onSubmitted }: AskExpertFormProps) {
       const reader = new FileReader();
       reader.onload = (e) => {
         const dataUrl = e.target?.result as string;
-        setImages(prev => [...prev, { dataUrl, angleType: 'other' }]);
+        setImages(prev => [...prev, { dataUrl }]);
       };
       reader.readAsDataURL(file);
     }
@@ -116,49 +112,42 @@ export function AskExpertForm({ prefill, onSubmitted }: AskExpertFormProps) {
 
     setIsUploading(true);
     try {
-      const uploadedImages = await Promise.all(
+      // Upload images
+      const uploadedUrls = await Promise.all(
         images.map(async (img) => {
-          const url = await uploadDiseaseImage(img.dataUrl, user?.id);
-          return { url, angleType: img.angleType };
+          return await uploadDiseaseImage(img.dataUrl, user?.id);
         })
       );
 
-      // Build question text (description only, structured fields stored separately)
-      const questionParts: string[] = [];
-      if (farmerQuestion) questionParts.push(farmerQuestion);
+      // Build description
+      const descParts: string[] = [];
+      if (farmerQuestion) descParts.push(farmerQuestion);
       if (prefill?.aiDisease) {
-        questionParts.push(`\n--- AI विश्लेषण ---\nरोग: ${prefill.aiDisease} (${Math.round((prefill.aiConfidence || 0) * 100)}%)`);
-        if (prefill.aiRecommendation) questionParts.push(`सिफारिस: ${prefill.aiRecommendation}`);
+        descParts.push(`\n--- AI विश्लेषण ---\nरोग: ${prefill.aiDisease} (${Math.round((prefill.aiConfidence || 0) * 100)}%)`);
+        if (prefill.aiRecommendation) descParts.push(`सिफारिस: ${prefill.aiRecommendation}`);
       }
+
+      // Get crop name & district name for the text fields
+      const selectedCrop = crops?.find(c => c.id.toString() === selectedCropId);
+      const selectedDistrict = districts.find(d => d.id === selectedDistrictId);
+
+      const aiSummary = prefill?.aiDisease ? {
+        detectedIssue: prefill.aiDisease,
+        confidence: prefill.aiConfidence,
+        aiRecommendation: prefill.aiRecommendation,
+        imageUrls: uploadedUrls,
+      } : { imageUrls: uploadedUrls };
 
       const result = await submitCase.mutateAsync({
-        cropId: parseInt(selectedCropId),
-        farmerQuestion: questionParts.join(' ') || undefined,
+        crop: selectedCrop ? (language === 'ne' ? selectedCrop.name_ne : selectedCrop.name_en) : selectedCropId,
         problemType: problemType || undefined,
+        district: selectedDistrict?.name_ne || undefined,
         priority,
-        channel: 'APP',
-        provinceId: selectedProvinceId || undefined,
-        districtId: selectedDistrictId || undefined,
-        images: uploadedImages,
+        channel: 'app',
+        aiSummary,
+        description: descParts.join(' ') || undefined,
+        imageUrls: uploadedUrls,
       });
-
-      // Create initial case_message for the thread
-      if (farmerQuestion || prefill?.aiDisease) {
-        await supabase.from('case_messages').insert({
-          case_id: result.id,
-          sender_type: 'farmer',
-          sender_id: user?.id || null,
-          message_text: farmerQuestion || `AI विश्लेषण: ${prefill?.aiDisease}`,
-          attachments: uploadedImages.map(img => ({ type: 'image', url: img.url })),
-        });
-      }
-
-      // Auto-route the case
-      try {
-        await supabase.rpc('auto_route_case', { p_case_id: result.id });
-      } catch (e) {
-        console.warn('Auto-routing skipped:', e);
-      }
 
       setSubmittedCaseId(result.id);
       setShowSuccess(true);
@@ -166,7 +155,7 @@ export function AskExpertForm({ prefill, onSubmitted }: AskExpertFormProps) {
       setFarmerQuestion('');
       setImages([]);
       setProblemType('');
-      setPriority('normal');
+      setPriority('low');
       onSubmitted?.();
 
       setTimeout(() => setShowSuccess(false), 8000);
@@ -218,7 +207,7 @@ export function AskExpertForm({ prefill, onSubmitted }: AskExpertFormProps) {
             समस्या पठाउनुहोस्
           </h2>
 
-          {/* AI Report Summary (if prefilled) */}
+          {/* AI Report Summary */}
           {prefill?.aiDisease && (
             <div className="p-3 bg-muted/60 rounded-xl border border-border/40">
               <div className="flex items-center gap-2 mb-1.5">
@@ -246,12 +235,7 @@ export function AskExpertForm({ prefill, onSubmitted }: AskExpertFormProps) {
                 {images.map((img, index) => (
                   <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-border/40">
                     <img src={img.dataUrl} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      className="absolute top-1 right-1 w-6 h-6 rounded-full"
-                      onClick={() => removeImage(index)}
-                    >
+                    <Button variant="destructive" size="icon" className="absolute top-1 right-1 w-6 h-6 rounded-full" onClick={() => removeImage(index)}>
                       <X className="w-3 h-3" />
                     </Button>
                   </div>
@@ -321,37 +305,22 @@ export function AskExpertForm({ prefill, onSubmitted }: AskExpertFormProps) {
               <label className="text-xs font-medium mb-1 block text-muted-foreground">
                 <MapPin className="w-3 h-3 inline mr-1" />प्रदेश
               </label>
-              <Select
-                value={selectedProvinceId?.toString() || ''}
-                onValueChange={(v) => handleProvinceChange(v ? parseInt(v) : null)}
-              >
-                <SelectTrigger className="h-9 text-sm">
-                  <SelectValue placeholder="प्रदेश" />
-                </SelectTrigger>
+              <Select value={selectedProvinceId?.toString() || ''} onValueChange={(v) => handleProvinceChange(v ? parseInt(v) : null)}>
+                <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="प्रदेश" /></SelectTrigger>
                 <SelectContent>
                   {provinces.map(p => (
-                    <SelectItem key={p.id} value={p.id.toString()} className="text-sm">
-                      {p.name_ne}
-                    </SelectItem>
+                    <SelectItem key={p.id} value={p.id.toString()} className="text-sm">{p.name_ne}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
               <label className="text-xs font-medium mb-1 block text-muted-foreground">जिल्ला</label>
-              <Select
-                value={selectedDistrictId?.toString() || ''}
-                onValueChange={(v) => handleDistrictChange(v ? parseInt(v) : null)}
-                disabled={!selectedProvinceId}
-              >
-                <SelectTrigger className="h-9 text-sm">
-                  <SelectValue placeholder="जिल्ला" />
-                </SelectTrigger>
+              <Select value={selectedDistrictId?.toString() || ''} onValueChange={(v) => handleDistrictChange(v ? parseInt(v) : null)} disabled={!selectedProvinceId}>
+                <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="जिल्ला" /></SelectTrigger>
                 <SelectContent>
                   {districts.map(d => (
-                    <SelectItem key={d.id} value={d.id.toString()} className="text-sm">
-                      {d.name_ne}
-                    </SelectItem>
+                    <SelectItem key={d.id} value={d.id.toString()} className="text-sm">{d.name_ne}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -360,9 +329,7 @@ export function AskExpertForm({ prefill, onSubmitted }: AskExpertFormProps) {
 
           {/* Description + Voice */}
           <div>
-            <label className="text-sm font-medium mb-2 block text-foreground">
-              समस्या बताउनुहोस्
-            </label>
+            <label className="text-sm font-medium mb-2 block text-foreground">समस्या बताउनुहोस्</label>
             <Textarea
               placeholder="बालीमा के भइरहेको छ? कति दिन भयो? कुन भागमा समस्या छ?"
               value={farmerQuestion}
@@ -374,12 +341,7 @@ export function AskExpertForm({ prefill, onSubmitted }: AskExpertFormProps) {
               <p className="text-xs text-primary mt-1 animate-pulse">🎤 {interimTranscript}</p>
             )}
             {voiceSupported && (
-              <Button
-                variant={isListening ? 'destructive' : 'outline'}
-                size="sm"
-                className="mt-2"
-                onClick={isListening ? stopListening : startListening}
-              >
+              <Button variant={isListening ? 'destructive' : 'outline'} size="sm" className="mt-2" onClick={isListening ? stopListening : startListening}>
                 {isListening ? <MicOff className="w-4 h-4 mr-1" /> : <Mic className="w-4 h-4 mr-1" />}
                 {isListening ? 'बन्द गर्नुहोस्' : 'आवाजमा बताउनुहोस्'}
               </Button>
@@ -391,9 +353,9 @@ export function AskExpertForm({ prefill, onSubmitted }: AskExpertFormProps) {
             <label className="text-xs font-medium mb-2 block text-muted-foreground">प्राथमिकता</label>
             <div className="flex gap-2">
               <button
-                onClick={() => setPriority('normal')}
+                onClick={() => setPriority('low')}
                 className={`px-4 py-2 rounded-full text-sm border transition-colors ${
-                  priority === 'normal'
+                  priority === 'low'
                     ? 'bg-primary/10 text-primary border-primary/30 font-medium'
                     : 'bg-muted/30 text-muted-foreground border-border/30'
                 }`}
@@ -401,9 +363,9 @@ export function AskExpertForm({ prefill, onSubmitted }: AskExpertFormProps) {
                 सामान्य
               </button>
               <button
-                onClick={() => setPriority('urgent')}
+                onClick={() => setPriority('high')}
                 className={`px-4 py-2 rounded-full text-sm border transition-colors flex items-center gap-1 ${
-                  priority === 'urgent'
+                  priority === 'high'
                     ? 'bg-destructive/10 text-destructive border-destructive/30 font-medium'
                     : 'bg-muted/30 text-muted-foreground border-border/30'
                 }`}
@@ -425,15 +387,9 @@ export function AskExpertForm({ prefill, onSubmitted }: AskExpertFormProps) {
             size="lg"
           >
             {isUploading || submitCase.isPending ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                पठाउँदैछ...
-              </>
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />पठाउँदैछ...</>
             ) : (
-              <>
-                <Send className="w-4 h-4 mr-2" />
-                विज्ञलाई पठाउनुहोस्
-              </>
+              <><Send className="w-4 h-4 mr-2" />विज्ञलाई पठाउनुहोस्</>
             )}
           </Button>
         </CardContent>
