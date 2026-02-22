@@ -96,47 +96,34 @@ export function RealtimeVoiceChat({ language, onClose, onShowPremium }: Realtime
       dcRef.current = dc;
 
       dc.onopen = () => {
-        console.log('[Realtime] Data channel opened');
-        
-        // Send session.update to configure the session and trigger initial greeting
-        const sessionUpdate = {
-          type: 'session.update',
-          session: {
-            modalities: ['text', 'audio'],
-            input_audio_transcription: {
-              model: 'whisper-1'
-            },
-            turn_detection: {
-              type: 'server_vad',
-              threshold: 0.5,
-              prefix_padding_ms: 300,
-              silence_duration_ms: 800
-            }
-          }
-        };
-        dc.send(JSON.stringify(sessionUpdate));
-        console.log('[Realtime] Session updated');
-
-        // Trigger an initial greeting from the AI
-        const createResponse = {
-          type: 'response.create',
-          response: {
-            modalities: ['text', 'audio'],
-            instructions: language === 'ne' 
-              ? 'नमस्ते दाइ/दिदी! म कृषि मित्र हुँ। तपाईंलाई खेतीबारीमा कसरी सहयोग गर्न सक्छु?'
-              : language === 'hi'
-              ? 'नमस्ते! मैं कृषि मित्र हूँ। आपकी खेती में कैसे मदद कर सकता हूँ?'
-              : 'Hello! I am Krishi Mitra. How can I help you with farming today?'
-          }
-        };
-        dc.send(JSON.stringify(createResponse));
-        console.log('[Realtime] Initial greeting requested');
+        console.log('[Realtime] Data channel opened - waiting for session.created before greeting');
+        // Don't send session.update - edge function already configured everything
+        // Don't send response.create yet - wait for session.created event
       };
 
       dc.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
           console.log('[Realtime] Event received:', msg.type);
+          
+          // When session is created, send the initial greeting
+          if (msg.type === 'session.created') {
+            console.log('[Realtime] Session created - sending initial greeting');
+            const createResponse = {
+              type: 'response.create',
+              response: {
+                modalities: ['text', 'audio'],
+                instructions: language === 'ne' 
+                  ? 'नमस्ते भन्नुहोस् र आफूलाई कृषि मित्र भनेर चिनाउनुहोस्। किसानलाई सोध्नुहोस् कसरी सहयोग गर्न सक्नुहुन्छ।'
+                  : language === 'hi'
+                  ? 'नमस्ते कहें और अपना परिचय कृषि मित्र के रूप में दें। किसान से पूछें कि कैसे मदद कर सकते हैं।'
+                  : 'Say hello and introduce yourself as Krishi Mitra. Ask the farmer how you can help.'
+              }
+            };
+            dc.send(JSON.stringify(createResponse));
+            console.log('[Realtime] Initial greeting requested after session.created');
+          }
+          
           handleRealtimeEvent(msg);
         } catch (e) {
           console.error('[Realtime] Parse error:', e);
