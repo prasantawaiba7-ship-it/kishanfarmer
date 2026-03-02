@@ -2,8 +2,9 @@ import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Camera, Upload, X, Loader2, Send, Mic, MicOff, 
-  Bot, Building2, User, Phone, Mail, ArrowRight, ArrowLeft, Leaf, CheckCircle2
+  Bot, Building2, User, Phone, Mail, ArrowRight, ArrowLeft, Leaf, CheckCircle2, Video
 } from 'lucide-react';
+import { AudioRecorder } from '@/components/media/AudioRecorder';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -47,6 +48,10 @@ export function AskExpertForm({ prefill, onSubmitted }: AskExpertFormProps) {
     prefill?.imageDataUrl ? [{ dataUrl: prefill.imageDataUrl }] : []
   );
   const [isUploading, setIsUploading] = useState(false);
+  // Voice note + video for ticket creation
+  const [voiceBlob, setVoiceBlob] = useState<{ blob: Blob; duration: number } | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
 
   const { data: offices, isLoading: officesLoading } = useAgOffices();
   const { data: technicians, isLoading: techsLoading } = useTechnicians(selectedOfficeId);
@@ -120,6 +125,37 @@ export function AskExpertForm({ prefill, onSubmitted }: AskExpertFormProps) {
           }
           await uploadTicketImage(ticket.id, file, user.id, 'farmer');
         }
+
+        // Upload voice note if recorded
+        if (voiceBlob && ticket.id) {
+          const { supabase } = await import('@/integrations/supabase/client');
+          // Get the first message for this ticket
+          const { data: msgs } = await (supabase as any)
+            .from('expert_ticket_messages')
+            .select('id')
+            .eq('ticket_id', ticket.id)
+            .order('created_at', { ascending: true })
+            .limit(1);
+          if (msgs && msgs.length > 0) {
+            const { uploadTicketMedia } = await import('@/hooks/useTicketMedia');
+            await uploadTicketMedia(ticket.id, msgs[0].id, voiceBlob.blob, 'audio', user.id, 'farmer', voiceBlob.duration);
+          }
+        }
+
+        // Upload video if selected
+        if (videoFile && ticket.id) {
+          const { supabase } = await import('@/integrations/supabase/client');
+          const { data: msgs } = await (supabase as any)
+            .from('expert_ticket_messages')
+            .select('id')
+            .eq('ticket_id', ticket.id)
+            .order('created_at', { ascending: true })
+            .limit(1);
+          if (msgs && msgs.length > 0) {
+            const { uploadTicketMedia } = await import('@/hooks/useTicketMedia');
+            await uploadTicketMedia(ticket.id, msgs[0].id, videoFile, 'video', user.id, 'farmer');
+          }
+        }
       }
 
       setFormStep('done');
@@ -136,6 +172,9 @@ export function AskExpertForm({ prefill, onSubmitted }: AskExpertFormProps) {
     setProblemTitle('');
     setFarmerQuestion('');
     setImages([]);
+    setVoiceBlob(null);
+    setVideoFile(null);
+    setShowVoiceRecorder(false);
     setSelectedOfficeId(null);
     setSelectedTechnicianId(null);
     setFormStep('problem');
@@ -231,6 +270,58 @@ export function AskExpertForm({ prefill, onSubmitted }: AskExpertFormProps) {
                     </Button>
                   )}
                 </div>
+
+                {/* Voice note recording */}
+                <div>
+                  <label className="text-sm font-medium mb-1 block text-foreground">🎤 भ्वाइस नोट (ऐच्छिक)</label>
+                  {voiceBlob ? (
+                    <div className="flex items-center gap-2 p-2 rounded-lg border border-border/40 bg-muted/20">
+                      <span className="text-sm text-foreground">✅ {voiceBlob.duration}s रेकर्ड भयो</span>
+                      <Button variant="ghost" size="sm" onClick={() => setVoiceBlob(null)}>हटाउनुहोस्</Button>
+                    </div>
+                  ) : showVoiceRecorder ? (
+                    <AudioRecorder
+                      maxDuration={60}
+                      onRecorded={(blob, dur) => { setVoiceBlob({ blob, duration: dur }); setShowVoiceRecorder(false); }}
+                      onCancel={() => setShowVoiceRecorder(false)}
+                    />
+                  ) : (
+                    <Button variant="outline" size="sm" onClick={() => setShowVoiceRecorder(true)}>
+                      <Mic className="w-4 h-4 mr-1" /> बोलेरै समस्या बताउने
+                    </Button>
+                  )}
+                </div>
+
+                {/* Short video upload */}
+                <div>
+                  <label className="text-sm font-medium mb-1 block text-foreground">📹 छोटो भिडियो (ऐच्छिक, ≤5MB)</label>
+                  {videoFile ? (
+                    <div className="flex items-center gap-2 p-2 rounded-lg border border-border/40 bg-muted/20">
+                      <Video className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm text-foreground">{videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(1)}MB)</span>
+                      <Button variant="ghost" size="sm" onClick={() => setVideoFile(null)}>हटाउनुहोस्</Button>
+                    </div>
+                  ) : (
+                    <label className="cursor-pointer">
+                      <Button variant="outline" size="sm" asChild>
+                        <span><Video className="w-4 h-4 mr-1" /> भिडियो छान्नुहोस्</span>
+                      </Button>
+                      <input
+                        type="file"
+                        accept="video/*"
+                        capture="environment"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f && f.size <= 5 * 1024 * 1024) setVideoFile(f);
+                          else if (f) toast({ title: 'भिडियो ५MB भन्दा सानो हुनुपर्छ', variant: 'destructive' });
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
+
                 <Button className="w-full" disabled={!canProceedFromProblem} onClick={() => setFormStep('office')}>
                   अर्को: कार्यालय छान्नुहोस् <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>

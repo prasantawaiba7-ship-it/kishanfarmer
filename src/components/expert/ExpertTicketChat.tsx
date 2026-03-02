@@ -1,11 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, ImagePlus, User, Shield, FileText } from 'lucide-react';
+import { Send, Loader2, ImagePlus, User, Shield, FileText, Mic, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/useAuth';
 import { useExpertTicketMessages, useSendExpertTicketMessage, uploadExpertImage } from '@/hooks/useExpertTickets';
+import { useTicketMedia, uploadTicketMedia } from '@/hooks/useTicketMedia';
 import { formatDistanceToNow } from 'date-fns';
 import { TemplatePicker } from './TemplatePicker';
+import { AudioRecorder } from '@/components/media/AudioRecorder';
+import { MediaAttachmentCard } from '@/components/media/MediaAttachmentCard';
+import { useToast } from '@/hooks/use-toast';
 
 interface ExpertTicketChatProps {
   ticketId: string;
@@ -15,14 +19,18 @@ interface ExpertTicketChatProps {
 
 export function ExpertTicketChat({ ticketId, cropName, senderRole = 'farmer' }: ExpertTicketChatProps) {
   const { user } = useAuth();
+  const { toast } = useToast();
   const { data: messages, isLoading } = useExpertTicketMessages(ticketId);
+  const { data: mediaAttachments } = useTicketMedia(ticketId);
   const sendMessage = useSendExpertTicketMessage();
   const [newMessage, setNewMessage] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [showRecorder, setShowRecorder] = useState(false);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
   // Recommendation templates start
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
-
   const handleTemplateSelect = (resolved: { title: string; body: string }) => {
     setNewMessage(prev => {
       const prefix = prev.trim() ? prev.trim() + '\n\n' : '';
@@ -36,6 +44,15 @@ export function ExpertTicketChat({ ticketId, cropName, senderRole = 'farmer' }: 
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Group media by message_id for rendering
+  const mediaByMessage = (mediaAttachments || []).reduce<Record<string, typeof mediaAttachments>>((acc, att) => {
+    if (!att) return acc;
+    const key = att.message_id;
+    if (!acc[key]) acc[key] = [];
+    acc[key]!.push(att);
+    return acc;
+  }, {});
 
   const handleSend = () => {
     if (!newMessage.trim()) return;
@@ -67,6 +84,103 @@ export function ExpertTicketChat({ ticketId, cropName, senderRole = 'farmer' }: 
     }
   };
 
+  // Voice note recording handler
+  const handleVoiceRecorded = async (blob: Blob, durationSeconds: number) => {
+    if (!user) return;
+    setUploadingMedia(true);
+    try {
+      // First create a message row
+      const { data: msgData, error: msgErr } = await (await import('@/integrations/supabase/client')).supabase
+        .from('expert_ticket_messages' as any)
+        .insert({
+          ticket_id: ticketId,
+          sender_type: senderRole,
+          sender_id: user.id,
+          message_text: '🎤 भ्वाइस नोट',
+        })
+        .select()
+        .single();
+      if (msgErr) throw msgErr;
+      const messageId = (msgData as any).id;
+
+      // Upload media
+      await uploadTicketMedia(ticketId, messageId, blob, 'audio', user.id, senderRole, durationSeconds);
+
+      // Update ticket unread flags
+      const updates: any = {};
+      if (senderRole === 'technician') {
+        updates.has_unread_farmer = true;
+        updates.status = 'answered';
+      } else {
+        updates.has_unread_technician = true;
+      }
+      await (await import('@/integrations/supabase/client')).supabase
+        .from('expert_tickets' as any)
+        .update(updates)
+        .eq('id', ticketId);
+
+      // Refresh queries
+      const { useQueryClient } = await import('@tanstack/react-query');
+
+      setShowRecorder(false);
+      toast({ title: '✅ भ्वाइस नोट पठाइयो' });
+      // Force refetch
+      window.dispatchEvent(new Event('voice-sent'));
+    } catch (err) {
+      console.error('Voice upload error:', err);
+      toast({ title: 'भ्वाइस नोट पठाउन सकिएन', variant: 'destructive' });
+    } finally {
+      setUploadingMedia(false);
+    }
+  };
+
+  // Video upload handler
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    // Enforce 5MB limit
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'भिडियो ५MB भन्दा सानो हुनुपर्छ', variant: 'destructive' });
+      e.target.value = '';
+      return;
+    }
+    setUploadingMedia(true);
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: msgData, error: msgErr } = await (supabase as any)
+        .from('expert_ticket_messages')
+        .insert({
+          ticket_id: ticketId,
+          sender_type: senderRole,
+          sender_id: user.id,
+          message_text: '📹 छोटो भिडियो',
+        })
+        .select()
+        .single();
+      if (msgErr) throw msgErr;
+      const messageId = (msgData as any).id;
+
+      await uploadTicketMedia(ticketId, messageId, file, 'video', user.id, senderRole);
+
+      const updates: any = {};
+      if (senderRole === 'technician') {
+        updates.has_unread_farmer = true;
+        updates.status = 'answered';
+      } else {
+        updates.has_unread_technician = true;
+      }
+      await (supabase as any).from('expert_tickets').update(updates).eq('id', ticketId);
+
+      toast({ title: '✅ भिडियो पठाइयो' });
+    } catch (err) {
+      console.error('Video upload error:', err);
+      toast({ title: 'भिडियो पठाउन सकिएन', variant: 'destructive' });
+    } finally {
+      setUploadingMedia(false);
+      e.target.value = '';
+    }
+  };
+
   if (isLoading) {
     return <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
   }
@@ -77,6 +191,7 @@ export function ExpertTicketChat({ ticketId, cropName, senderRole = 'farmer' }: 
         {messages && messages.length > 0 ? messages.map(msg => {
           const isOwn = msg.sender_id === user?.id;
           const isTechnician = msg.sender_type === 'technician';
+          const msgMedia = mediaByMessage[msg.id] || [];
           return (
             <div key={msg.id} className={`max-w-[85%] ${isOwn ? 'ml-auto' : 'mr-auto'}`}>
               <div className={`p-3 rounded-2xl border ${
@@ -99,6 +214,15 @@ export function ExpertTicketChat({ ticketId, cropName, senderRole = 'farmer' }: 
                     <img src={msg.image_url} alt="attachment" className="mt-2 rounded-lg max-h-48 object-cover" />
                   </a>
                 )}
+                {/* Media attachments (audio/video) */}
+                {msgMedia.map((att: any) => (
+                  <MediaAttachmentCard
+                    key={att.id}
+                    type={att.type}
+                    fileUrl={att.file_url}
+                    durationSeconds={att.duration_seconds}
+                  />
+                ))}
               </div>
             </div>
           );
@@ -108,6 +232,24 @@ export function ExpertTicketChat({ ticketId, cropName, senderRole = 'farmer' }: 
       </div>
 
       <div className="border-t border-border/40 p-3">
+        {/* Voice recorder UI */}
+        {showRecorder && (
+          <div className="mb-2">
+            <AudioRecorder
+              maxDuration={60}
+              onRecorded={handleVoiceRecorded}
+              onCancel={() => setShowRecorder(false)}
+              disabled={uploadingMedia}
+            />
+          </div>
+        )}
+
+        {uploadingMedia && (
+          <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" /> अपलोड हुँदैछ...
+          </div>
+        )}
+
         {/* Recommendation templates start */}
         {senderRole === 'technician' && (
           <div className="mb-2">
@@ -134,6 +276,25 @@ export function ExpertTicketChat({ ticketId, cropName, senderRole = 'farmer' }: 
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
           />
           <div className="flex flex-col gap-1 self-end">
+            {/* Voice note button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-9 h-9"
+              onClick={() => setShowRecorder(!showRecorder)}
+              disabled={uploadingMedia}
+              title="भ्वाइस नोट"
+            >
+              <Mic className="w-4 h-4 text-muted-foreground" />
+            </Button>
+            {/* Video upload */}
+            <label className="cursor-pointer" title="छोटो भिडियो">
+              <div className="w-9 h-9 rounded-md border border-input flex items-center justify-center hover:bg-accent/10 transition-colors">
+                {uploadingMedia ? <Loader2 className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4 text-muted-foreground" />}
+              </div>
+              <input type="file" accept="video/*" capture="environment" className="hidden" onChange={handleVideoUpload} disabled={uploadingMedia} />
+            </label>
+            {/* Image upload */}
             <label className="cursor-pointer">
               <div className="w-9 h-9 rounded-md border border-input flex items-center justify-center hover:bg-accent/10 transition-colors">
                 {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4 text-muted-foreground" />}
