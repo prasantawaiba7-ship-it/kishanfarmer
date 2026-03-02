@@ -66,8 +66,8 @@ export function AskExpertForm({ prefill, onSubmitted }: AskExpertFormProps) {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
-    if (images.length + files.length > 3) {
-      toast({ title: 'बढीमा ३ फोटो मात्र', variant: 'destructive' });
+    if (images.length + files.length > 5) {
+      toast({ title: 'बढीमा ५ फोटो मात्र', variant: 'destructive' });
       return;
     }
     for (const file of Array.from(files)) {
@@ -183,7 +183,7 @@ export function AskExpertForm({ prefill, onSubmitted }: AskExpertFormProps) {
                   </div>
                 )}
                 <div>
-                  <label className="text-sm font-medium mb-2 block text-foreground">📷 फोटो ({images.length}/3)</label>
+                  <label className="text-sm font-medium mb-2 block text-foreground">📷 फोटो ({images.length}/5)</label>
                   {images.length > 0 ? (
                     <div className="grid grid-cols-3 gap-2 mb-2">
                       {images.map((img, index) => (
