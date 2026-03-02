@@ -1709,6 +1709,50 @@ export type Database = {
         }
         Relationships: []
       }
+      expert_message_attachments: {
+        Row: {
+          created_at: string
+          duration_seconds: number | null
+          file_url: string
+          id: string
+          message_id: string
+          role: string
+          ticket_id: string
+          type: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number | null
+          file_url: string
+          id?: string
+          message_id: string
+          role: string
+          ticket_id: string
+          type: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number | null
+          file_url?: string
+          id?: string
+          message_id?: string
+          role?: string
+          ticket_id?: string
+          type?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_message_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "expert_ticket_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expert_templates: {
         Row: {
           body: string
