@@ -8,6 +8,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useCurrentTechnician } from "@/hooks/useCurrentTechnician";
 import { TechnicianNotificationBell } from "@/components/notifications/TechnicianNotificationBell";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -74,6 +75,7 @@ const Header = () => {
           <div className="hidden md:flex items-center gap-2">
             {/* Notification system start */}
             <TechnicianNotificationBell />
+            {user && <NotificationBell />}
             {/* Notification system end */}
             <Button
               variant="ghost"
@@ -110,6 +112,7 @@ const Header = () => {
           <div className="flex md:hidden items-center gap-1.5">
             {/* Notification system start */}
             <TechnicianNotificationBell />
+            {user && <NotificationBell />}
             {/* Notification system end */}
             <Button
               variant="ghost"

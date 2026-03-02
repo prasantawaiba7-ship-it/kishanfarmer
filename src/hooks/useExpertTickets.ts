@@ -311,6 +311,23 @@ export function useSendExpertTicketMessage() {
         updates.has_unread_technician = true;
       }
       await (supabase as any).from('expert_tickets').update(updates).eq('id', data.ticketId);
+
+      // Create in-app notification for farmer when technician replies
+      if (data.senderType === 'technician') {
+        try {
+          const { data: ticket } = await (supabase as any)
+            .from('expert_tickets')
+            .select('farmer_id, problem_title')
+            .eq('id', data.ticketId)
+            .single();
+          if (ticket) {
+            const { createTicketReplyNotification } = await import('@/hooks/useAppNotifications');
+            await createTicketReplyNotification(ticket.farmer_id, data.ticketId, ticket.problem_title);
+          }
+        } catch (e) {
+          console.error('Notification creation failed:', e);
+        }
+      }
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['expert-ticket-messages', vars.ticketId] });
