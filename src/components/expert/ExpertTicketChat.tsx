@@ -6,7 +6,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useExpertTicketMessages, useSendExpertTicketMessage, uploadExpertImage } from '@/hooks/useExpertTickets';
 import { formatDistanceToNow } from 'date-fns';
 import { TemplatePicker } from './TemplatePicker';
-import { ExpertTemplate } from '@/hooks/useExpertTemplates';
 
 interface ExpertTicketChatProps {
   ticketId: string;
@@ -24,10 +23,10 @@ export function ExpertTicketChat({ ticketId, cropName, senderRole = 'farmer' }: 
   // Recommendation templates start
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
 
-  const handleTemplateSelect = (template: ExpertTemplate) => {
+  const handleTemplateSelect = (resolved: { title: string; body: string }) => {
     setNewMessage(prev => {
       const prefix = prev.trim() ? prev.trim() + '\n\n' : '';
-      return prefix + template.title + '\n\n' + template.body;
+      return prefix + resolved.title + '\n\n' + resolved.body;
     });
   };
   // Recommendation templates end
