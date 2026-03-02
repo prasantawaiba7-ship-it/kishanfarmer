@@ -12,6 +12,10 @@ export interface ExpertTemplate {
   language: string;
   title: string;
   body: string;
+  title_ne: string | null;
+  body_ne: string | null;
+  title_en: string | null;
+  body_en: string | null;
   tags: string[] | null;
   is_active: boolean;
   created_by: string | null;
@@ -25,6 +29,21 @@ export interface ExpertTemplateFilters {
   language?: string;
   isActive?: boolean;
   search?: string;
+}
+
+/** Resolve the best title/body for a given language, with fallback */
+export function resolveTemplateContent(
+  template: ExpertTemplate,
+  lang: string
+): { title: string; body: string } {
+  if (lang === 'en' && template.body_en) {
+    return { title: template.title_en || template.title, body: template.body_en };
+  }
+  if (template.body_ne) {
+    return { title: template.title_ne || template.title, body: template.body_ne };
+  }
+  // ultimate fallback
+  return { title: template.title, body: template.body };
 }
 
 export function useExpertTemplates(filters?: ExpertTemplateFilters) {
@@ -42,15 +61,12 @@ export function useExpertTemplates(filters?: ExpertTemplateFilters) {
       if (filters?.crop) {
         query = query.eq('crop', filters.crop);
       }
-      if (filters?.language) {
-        query = query.eq('language', filters.language);
-      }
       if (filters?.disease) {
         query = query.ilike('disease', `%${filters.disease}%`);
       }
       if (filters?.search) {
         query = query.or(
-          `title.ilike.%${filters.search}%,disease.ilike.%${filters.search}%,body.ilike.%${filters.search}%`
+          `title.ilike.%${filters.search}%,disease.ilike.%${filters.search}%,body.ilike.%${filters.search}%,title_ne.ilike.%${filters.search}%,title_en.ilike.%${filters.search}%`
         );
       }
 

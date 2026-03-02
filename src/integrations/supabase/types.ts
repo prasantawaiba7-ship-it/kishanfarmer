@@ -1712,6 +1712,8 @@ export type Database = {
       expert_templates: {
         Row: {
           body: string
+          body_en: string | null
+          body_ne: string | null
           created_at: string
           created_by: string | null
           crop: string
@@ -1721,10 +1723,14 @@ export type Database = {
           language: string
           tags: string[] | null
           title: string
+          title_en: string | null
+          title_ne: string | null
           updated_at: string
         }
         Insert: {
           body: string
+          body_en?: string | null
+          body_ne?: string | null
           created_at?: string
           created_by?: string | null
           crop: string
@@ -1734,10 +1740,14 @@ export type Database = {
           language?: string
           tags?: string[] | null
           title: string
+          title_en?: string | null
+          title_ne?: string | null
           updated_at?: string
         }
         Update: {
           body?: string
+          body_en?: string | null
+          body_ne?: string | null
           created_at?: string
           created_by?: string | null
           crop?: string
@@ -1747,6 +1757,8 @@ export type Database = {
           language?: string
           tags?: string[] | null
           title?: string
+          title_en?: string | null
+          title_ne?: string | null
           updated_at?: string
         }
         Relationships: []
