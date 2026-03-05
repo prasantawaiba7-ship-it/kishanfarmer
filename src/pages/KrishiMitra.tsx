@@ -1,7 +1,7 @@
 import { Helmet } from "react-helmet-async";
 import { useRef } from "react";
-import Header from "@/components/layout/Header";
 import { OnScreenAssistant } from "@/components/ai/OnScreenAssistant";
+import { FarmerBottomNav } from "@/components/layout/FarmerBottomNav";
 import { useLanguage } from "@/hooks/useLanguage";
 
 const KrishiMitra = () => {
@@ -16,14 +16,13 @@ const KrishiMitra = () => {
       </Helmet>
 
       <div className="min-h-screen bg-background flex flex-col">
-        <Header />
-
-        <main className="flex-1 flex flex-col pt-16 sm:pt-20">
+        <main className="flex-1 flex flex-col">
           <OnScreenAssistant 
             isFullScreen={true} 
             inputRef={inputRef}
           />
         </main>
+        <FarmerBottomNav />
       </div>
     </>
   );
