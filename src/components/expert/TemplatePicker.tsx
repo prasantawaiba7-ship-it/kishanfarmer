@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Search, FileText, Sparkles } from 'lucide-react';
-import { useExpertTemplates, ExpertTemplate, resolveTemplateContent } from '@/hooks/useExpertTemplates';
-import { useLanguage } from '@/hooks/useLanguage';
+import { useExpertTemplates, ExpertTemplate } from '@/hooks/useExpertTemplates';
 
 // Recommendation templates start
 
@@ -13,9 +13,9 @@ const QUICK_CROPS = ['धान', 'गहुँ', 'आलु', 'मकै', 'ट
 interface TemplatePickerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Returns resolved title+body for the chosen language */
-  onSelect: (resolved: { title: string; body: string }, template: ExpertTemplate) => void;
+  onSelect: (template: ExpertTemplate) => void;
   defaultCrop?: string;
+  defaultLanguage?: string;
   /** Future: AI-suggested template IDs */
   suggestedTemplateIds?: string[];
 }
@@ -25,21 +25,21 @@ export function TemplatePicker({
   onOpenChange,
   onSelect,
   defaultCrop,
+  defaultLanguage = 'ne',
   suggestedTemplateIds,
 }: TemplatePickerProps) {
-  const { language } = useLanguage();
   const [cropFilter, setCropFilter] = useState(defaultCrop || '');
   const [searchText, setSearchText] = useState('');
 
   const { data: templates, isLoading } = useExpertTemplates({
     isActive: true,
     crop: cropFilter || undefined,
+    language: defaultLanguage || undefined,
     search: searchText || undefined,
   });
 
   const handleSelect = (t: ExpertTemplate) => {
-    const resolved = resolveTemplateContent(t, language);
-    onSelect(resolved, t);
+    onSelect(t);
     onOpenChange(false);
   };
 
@@ -106,13 +106,13 @@ export function TemplatePicker({
                     <Sparkles className="h-3 w-3" /> Suggested
                   </p>
                   {suggested.map(t => (
-                    <TemplateCard key={t.id} template={t} onSelect={handleSelect} lang={language} isSuggested />
+                    <TemplateCard key={t.id} template={t} onSelect={handleSelect} isSuggested />
                   ))}
                 </>
               )}
 
               {rest.length > 0 ? rest.map(t => (
-                <TemplateCard key={t.id} template={t} onSelect={handleSelect} lang={language} />
+                <TemplateCard key={t.id} template={t} onSelect={handleSelect} />
               )) : (
                 <p className="text-center text-sm text-muted-foreground py-8">कुनै template भेटिएन।</p>
               )}
@@ -127,16 +127,13 @@ export function TemplatePicker({
 function TemplateCard({
   template,
   onSelect,
-  lang,
   isSuggested,
 }: {
   template: ExpertTemplate;
   onSelect: (t: ExpertTemplate) => void;
-  lang: string;
   isSuggested?: boolean;
 }) {
-  const resolved = resolveTemplateContent(template, lang);
-  const preview = resolved.body.split('\n').slice(0, 2).join(' ');
+  const preview = template.body.split('\n').slice(0, 2).join(' ');
   return (
     <button
       onClick={() => onSelect(template)}
@@ -146,19 +143,13 @@ function TemplateCard({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="font-medium text-sm truncate">{resolved.title}</p>
+          <p className="font-medium text-sm truncate">{template.title}</p>
           <p className="text-xs text-muted-foreground mt-0.5">
             {template.crop} • {template.disease}
           </p>
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{preview}</p>
         </div>
-        <div className="flex flex-col items-end gap-1 shrink-0">
-          {isSuggested && <Badge variant="secondary" className="text-[10px]">Suggested</Badge>}
-          <div className="flex gap-0.5">
-            {template.body_ne && <Badge variant="secondary" className="text-[9px] px-1">NE</Badge>}
-            {template.body_en && <Badge variant="outline" className="text-[9px] px-1">EN</Badge>}
-          </div>
-        </div>
+        {isSuggested && <Badge variant="secondary" className="text-[10px] shrink-0">Suggested</Badge>}
       </div>
     </button>
   );

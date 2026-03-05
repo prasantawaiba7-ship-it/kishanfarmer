@@ -9,7 +9,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { useTechnicianTickets, type ExpertTicket } from '@/hooks/useExpertTickets';
 import { ExpertTicketChat } from '@/components/expert/ExpertTicketChat';
-import { TicketImageGallery } from '@/components/tickets/TicketImageGallery';
 import { ArrowLeft, Loader2, Clock, CheckCircle2, Eye, XCircle, MessageCircle, Filter } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -53,8 +52,7 @@ export default function TechnicianDashboardPage() {
               <h2 className="text-lg font-bold text-foreground">{selectedTicket.problem_title}</h2>
               <p className="text-sm text-muted-foreground">🌾 {selectedTicket.crop_name} • किसान</p>
             </div>
-            <TicketImageGallery ticketId={selectedTicket.id} ticketTechnicianId={selectedTicket.technician_id} />
-            <Card className="overflow-hidden mt-4">
+            <Card className="overflow-hidden">
               <ExpertTicketChat ticketId={selectedTicket.id} cropName={selectedTicket.crop_name} senderRole="technician" />
             </Card>
           </main>

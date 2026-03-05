@@ -220,6 +220,7 @@ export function useCreateExpertTicket() {
       cropName: string;
       problemTitle: string;
       problemDescription: string;
+      imageUrls?: string[];
       farmerPhone?: string;
     }) => {
       // Ticket goes directly to the chosen technician
@@ -243,13 +244,29 @@ export function useCreateExpertTicket() {
         .single();
       if (error) throw error;
 
-      // Insert first message (text only; images stored in expert_ticket_images)
-      await (supabase as any).from('expert_ticket_messages').insert({
+      // Insert first message
+      const firstMsg: any = {
         ticket_id: ticket.id,
         sender_type: 'farmer',
         sender_id: user!.id,
         message_text: data.problemDescription,
-      });
+      };
+      if (data.imageUrls && data.imageUrls.length > 0) {
+        firstMsg.image_url = data.imageUrls[0];
+      }
+      await (supabase as any).from('expert_ticket_messages').insert(firstMsg);
+
+      // Additional image messages
+      if (data.imageUrls && data.imageUrls.length > 1) {
+        for (let i = 1; i < data.imageUrls.length; i++) {
+          await (supabase as any).from('expert_ticket_messages').insert({
+            ticket_id: ticket.id,
+            sender_type: 'farmer',
+            sender_id: user!.id,
+            image_url: data.imageUrls[i],
+          });
+        }
+      }
 
       return ticket as ExpertTicket;
     },
@@ -294,42 +311,6 @@ export function useSendExpertTicketMessage() {
         updates.has_unread_technician = true;
       }
       await (supabase as any).from('expert_tickets').update(updates).eq('id', data.ticketId);
-
-      // Create in-app notification for the other party
-      try {
-        const { data: ticket } = await (supabase as any)
-          .from('expert_tickets')
-          .select('farmer_id, problem_title, technician_id')
-          .eq('id', data.ticketId)
-          .single();
-        if (ticket) {
-          if (data.senderType === 'technician') {
-            // Notify farmer
-            const { createTicketReplyNotification } = await import('@/hooks/useAppNotifications');
-            await createTicketReplyNotification(ticket.farmer_id, data.ticketId, ticket.problem_title);
-          } else {
-            // Notify technician: look up their user_id
-            if (ticket.technician_id) {
-              const { data: tech } = await (supabase as any)
-                .from('technicians')
-                .select('user_id')
-                .eq('id', ticket.technician_id)
-                .single();
-              if (tech?.user_id) {
-                await supabase.from('notifications').insert({
-                  user_id: tech.user_id,
-                  title: 'किसानको नयाँ सन्देश',
-                  body: `"${ticket.problem_title}" मा किसानले नयाँ सन्देश पठाउनुभयो।`,
-                  type: 'ticket_reply',
-                  ticket_id: data.ticketId,
-                });
-              }
-            }
-          }
-        }
-      } catch (e) {
-        console.error('Notification creation failed:', e);
-      }
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['expert-ticket-messages', vars.ticketId] });
