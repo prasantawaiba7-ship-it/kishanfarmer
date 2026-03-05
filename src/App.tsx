@@ -41,6 +41,7 @@ import AskExpertPage from "./pages/AskExpertPage";
 import ExpertQuestionsPage from "./pages/ExpertQuestionsPage";
 import TechnicianDashboardPage from "./pages/TechnicianDashboardPage";
 import ExpertDashboardPage from "./pages/ExpertDashboardPage";
+import NotificationCenterPage from "./pages/NotificationCenterPage";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -83,6 +84,7 @@ const App = () => (
                 <Route path="/expert-questions" element={<ExpertQuestionsPage />} />
                 <Route path="/technician-dashboard" element={<TechnicianDashboardPage />} />
                 <Route path="/expert-dashboard" element={<ExpertDashboardPage />} />
+                <Route path="/notifications" element={<NotificationCenterPage />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

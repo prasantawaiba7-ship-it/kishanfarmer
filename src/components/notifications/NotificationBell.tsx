@@ -34,7 +34,14 @@ export function NotificationBell() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative rounded-full h-9 w-9 p-0">
+        <Button variant="ghost" size="sm" className="relative rounded-full h-9 w-9 p-0" onClick={(e) => {
+          // If on mobile, navigate to full page instead
+          if (window.innerWidth < 640) {
+            e.preventDefault();
+            e.stopPropagation();
+            navigate('/notifications');
+          }
+        }}>
           <Bell className="w-4 h-4" />
           {!!unreadCount && unreadCount > 0 && (
             <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
@@ -43,7 +50,7 @@ export function NotificationBell() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-0">
+      <PopoverContent align="end" className="w-80 p-0 hidden sm:block">
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
           <span className="font-semibold text-sm">🔔 सूचनाहरू</span>
           {!!unreadCount && unreadCount > 0 && (
