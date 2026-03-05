@@ -162,8 +162,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      // Use local scope to clear session even if server-side token is expired/invalid
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch (err) {
+      console.error('Sign out error (ignored):', err);
+    }
+    // Force-clear state regardless
+    setUser(null);
+    setSession(null);
     setProfile(null);
+    // Purge any cached Supabase tokens from localStorage
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('sb-')) localStorage.removeItem(key);
+    });
     toast({
       title: "Signed out",
       description: "You have been signed out successfully.",
