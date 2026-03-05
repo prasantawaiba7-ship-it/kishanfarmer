@@ -73,7 +73,6 @@ const HeroSection = () => {
           >
             <Link to="/disease-detection">
               <Button size="lg" className="group rounded-full px-8 py-6 text-base font-semibold shadow-lg hover:shadow-xl transition-all w-full sm:w-auto">
-                <Camera className="w-5 h-5 mr-2" />
                 📷 रोग पहिचान गर्नुहोस्
                 <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
@@ -84,7 +83,6 @@ const HeroSection = () => {
                 variant="outline" 
                 className="rounded-full px-8 py-6 text-base font-medium border-2 border-border hover:bg-primary/5 hover:border-primary/30 w-full sm:w-auto"
               >
-                <Bot className="w-5 h-5 mr-2 text-primary" />
                 🤖 AI सँग सोध्नुहोस्
               </Button>
             </Link>
