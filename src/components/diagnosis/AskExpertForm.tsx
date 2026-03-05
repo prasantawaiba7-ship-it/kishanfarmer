@@ -219,6 +219,26 @@ export function AskExpertForm({ prefill, onSubmitted }: AskExpertFormProps) {
                   <label className="text-sm font-medium mb-1 block text-foreground">🌱 बालीको नाम</label>
                   <Input placeholder="जस्तै: धान, गहुँ, तरकारी..." value={cropName} onChange={e => setCropName(e.target.value)} />
                 </div>
+                {/* Farm & Crop context selectors */}
+                {farms && farms.length > 0 && (
+                  <div className="space-y-2 p-3 bg-muted/40 rounded-xl border border-border/40">
+                    <p className="text-xs font-medium text-muted-foreground flex items-center gap-1"><Home className="w-3 h-3" /> खेत सन्दर्भ (वैकल्पिक)</p>
+                    <Select value={selectedFarmId || ''} onValueChange={(v) => { setSelectedFarmId(v || null); setSelectedFarmCropId(null); }}>
+                      <SelectTrigger className="h-9"><SelectValue placeholder="खेत छान्नुहोस्" /></SelectTrigger>
+                      <SelectContent>
+                        {farms.map(f => <SelectItem key={f.id} value={f.id}>{f.farm_name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    {farmCrops && farmCrops.length > 0 && (
+                      <Select value={selectedFarmCropId || ''} onValueChange={(v) => setSelectedFarmCropId(v || null)}>
+                        <SelectTrigger className="h-9"><SelectValue placeholder="बाली छान्नुहोस्" /></SelectTrigger>
+                        <SelectContent>
+                          {farmCrops.map(c => <SelectItem key={c.id} value={c.id}>{c.crop_type} {c.season ? `(${c.season})` : ''}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                )}
                 <div>
                   <label className="text-sm font-medium mb-1 block text-foreground">समस्याको शीर्षक *</label>
                   <Input placeholder="जस्तै: पातमा पहेंलो दाग" value={problemTitle} onChange={e => setProblemTitle(e.target.value)} />
