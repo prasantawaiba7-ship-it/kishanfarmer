@@ -15,6 +15,9 @@ interface ExpertTicketChatProps {
   senderRole?: 'farmer' | 'technician';
   farmId?: string | null;
   farmCropId?: string | null;
+  ticketStatus?: string;
+  satisfactionScore?: number | null;
+  feedbackAt?: string | null;
 }
 
 export function ExpertTicketChat({ ticketId, cropName, senderRole = 'farmer', farmId, farmCropId }: ExpertTicketChatProps) {
