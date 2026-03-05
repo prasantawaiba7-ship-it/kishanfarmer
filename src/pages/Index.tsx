@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import SimpleHomeScreen from "@/components/home/SimpleHomeScreen";
+import HeroSection from "@/components/home/HeroSection";
+import QuickActionsGrid from "@/components/home/QuickActionsGrid";
+import FeaturesSection from "@/components/home/FeaturesSection";
+import HowItWorksSection from "@/components/home/HowItWorksSection";
+import CTASection from "@/components/home/CTASection";
+import { MyMarketShortcut } from "@/components/home/MyMarketShortcut";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { Helmet } from "react-helmet-async";
 import WelcomeOnboarding from "@/components/onboarding/WelcomeOnboarding";
@@ -40,7 +45,18 @@ const Index = () => {
         <Header />
         <PageTransition>
           <main>
-            <SimpleHomeScreen />
+            <HeroSection />
+            <QuickActionsGrid />
+            
+            <section className="py-4 sm:py-6">
+              <div className="container mx-auto px-4 max-w-xl">
+                <MyMarketShortcut />
+              </div>
+            </section>
+            
+            <FeaturesSection />
+            <HowItWorksSection />
+            <CTASection />
           </main>
         </PageTransition>
         <Footer />
