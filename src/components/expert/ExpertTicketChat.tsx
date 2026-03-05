@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, ImagePlus, User, Shield, FileText } from 'lucide-react';
+import { TicketFeedbackCard } from '@/components/feedback/TicketFeedbackCard';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,7 +21,7 @@ interface ExpertTicketChatProps {
   feedbackAt?: string | null;
 }
 
-export function ExpertTicketChat({ ticketId, cropName, senderRole = 'farmer', farmId, farmCropId }: ExpertTicketChatProps) {
+export function ExpertTicketChat({ ticketId, cropName, senderRole = 'farmer', farmId, farmCropId, ticketStatus, satisfactionScore, feedbackAt }: ExpertTicketChatProps) {
   const { user } = useAuth();
   const { data: messages, isLoading } = useExpertTicketMessages(ticketId);
   const sendMessage = useSendExpertTicketMessage();
