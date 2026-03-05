@@ -37,6 +37,8 @@ export interface ExpertTicket {
   has_unread_technician: boolean;
   created_at: string;
   updated_at: string;
+  farm_id?: string | null;
+  farm_crop_id?: string | null;
   technician?: Technician;
   office?: AgOffice;
 }

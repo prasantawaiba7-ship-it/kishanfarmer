@@ -7,11 +7,14 @@ import { useExpertTicketMessages, useSendExpertTicketMessage, uploadExpertImage 
 import { formatDistanceToNow } from 'date-fns';
 import { TemplatePicker } from './TemplatePicker';
 import { ExpertTemplate } from '@/hooks/useExpertTemplates';
+import { FarmContextLine } from '@/components/farm/FarmContextLine';
 
 interface ExpertTicketChatProps {
   ticketId: string;
   cropName?: string;
   senderRole?: 'farmer' | 'technician';
+  farmId?: string | null;
+  farmCropId?: string | null;
 }
 
 export function ExpertTicketChat({ ticketId, cropName, senderRole = 'farmer' }: ExpertTicketChatProps) {
