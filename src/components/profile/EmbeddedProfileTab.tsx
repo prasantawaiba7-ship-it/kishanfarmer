@@ -349,7 +349,7 @@ export function EmbeddedProfileTab() {
       <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>के तपाईं निस्कन चाहनुहुन्छ?</AlertDialogTitle>
+            <AlertDialogTitle>के तपाईं एपबाट निस्कन चाहनुहुन्छ?</AlertDialogTitle>
             <AlertDialogDescription>तपाईं आफ्नो खाताबाट लगआउट हुनुहुनेछ।</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
