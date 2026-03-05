@@ -208,6 +208,62 @@ export function useIsExpert() {
   });
 }
 
+// --- Triage: classify risk level based on problem text ---
+function classifyRiskLevel(title: string, description: string): { riskLevel: string; needsExpertReview: boolean; triageTags: string[] } {
+  const text = `${title} ${description}`.toLowerCase();
+  const tags: string[] = [];
+
+  // High-risk keywords
+  const highRiskPatterns = [
+    /outbreak|epidemic|widespread|महामारी|फैलिरहेको|व्यापक/i,
+    /poison|विष|विषाक्त|मरेको|dead animals|dying/i,
+    /entire field|सबै खेत|पुरै खेत|all plants|सबै बोट/i,
+    /heavy chemical|धेरै रसायन|pesticide.*dose|spray.*how much/i,
+    /urgent|emergency|तुरुन्त|जरुरी/i,
+  ];
+
+  const mediumRiskPatterns = [
+    /disease|रोग|blight|blast|wilt|rot|rust|virus|ढुसी|कुहिने/i,
+    /pest|कीरा|borer|armyworm|aphid|hopper|moth|caterpillar|माहू|लाही/i,
+    /chemical|spray|रसायन|छर्ने|fungicide|insecticide|कीटनाशक/i,
+    /yellow|turning|सुक्दै|पहेँलो|ओइलाउँदै|wilting/i,
+    /large area|ठूलो क्षेत्र|bigha|hectare|बिघा|हेक्टर/i,
+  ];
+
+  let riskLevel = 'low';
+  let needsExpertReview = false;
+
+  for (const pattern of highRiskPatterns) {
+    if (pattern.test(text)) {
+      riskLevel = 'high';
+      needsExpertReview = true;
+      tags.push('high_risk_keyword');
+      break;
+    }
+  }
+
+  if (riskLevel === 'low') {
+    let mediumHits = 0;
+    for (const pattern of mediumRiskPatterns) {
+      if (pattern.test(text)) {
+        mediumHits++;
+        if (mediumHits >= 2) {
+          riskLevel = 'medium';
+          needsExpertReview = true;
+          tags.push('multiple_risk_indicators');
+          break;
+        }
+      }
+    }
+    if (mediumHits === 1) {
+      riskLevel = 'medium';
+      tags.push('single_risk_indicator');
+    }
+  }
+
+  return { riskLevel, needsExpertReview, triageTags: tags };
+}
+
 // --- Mutations ---
 
 export function useCreateExpertTicket() {
@@ -227,7 +283,9 @@ export function useCreateExpertTicket() {
       farmId?: string;
       farmCropId?: string;
     }) => {
-      // Ticket goes directly to the chosen technician
+      // Classify risk level
+      const { riskLevel, needsExpertReview, triageTags } = classifyRiskLevel(data.problemTitle, data.problemDescription);
+
       const insertData: any = {
         farmer_id: user!.id,
         office_id: data.officeId,
@@ -241,6 +299,11 @@ export function useCreateExpertTicket() {
         has_unread_farmer: false,
         farm_id: data.farmId || null,
         farm_crop_id: data.farmCropId || null,
+        risk_level: riskLevel,
+        needs_expert_review: needsExpertReview,
+        triage_tags: triageTags,
+        first_response_source: 'expert',
+        handled_by: 'expert',
       };
 
       const { data: ticket, error } = await (supabase as any)
@@ -249,6 +312,16 @@ export function useCreateExpertTicket() {
         .select()
         .single();
       if (error) throw error;
+
+      // Log creation event
+      await (supabase as any).from('ticket_events').insert({
+        ticket_id: ticket.id,
+        event_type: 'created',
+        to_status: 'open',
+        actor_id: user!.id,
+        actor_type: 'farmer',
+        metadata: { risk_level: riskLevel, triage_tags: triageTags },
+      });
 
       // Insert first message
       const firstMsg: any = {
