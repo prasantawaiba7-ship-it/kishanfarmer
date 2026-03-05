@@ -892,161 +892,117 @@ export function OnScreenAssistant({ isFullScreen: isEmbeddedFullScreen = false, 
   if (isEmbeddedFullScreen) {
     return (
       <>
-        <div className="flex flex-col h-full krishi-chat-container">
-          {/* Header - Farm themed gradient */}
-          <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 krishi-chat-header shrink-0 shadow-md">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
-                <Leaf className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="font-bold text-lg sm:text-xl text-white">
-                  {language === 'ne' ? 'Farmer Gpt' : language === 'hi' ? 'Farmer Gpt' : 'Farmer Gpt'}
-                </h1>
-                <p className="text-xs sm:text-sm text-white/80">
-                  {language === 'ne' ? 'नेपाली वा English मा सोध्नुहोस्' : language === 'hi' ? 'नेपाली, हिन्दी या English में पूछें' : 'Ask in Nepali or English'}
-                </p>
-              </div>
-              {subscribed && (
-                <span className="text-xs bg-accent text-accent-foreground px-2 py-1 rounded-full flex items-center gap-1 ml-2">
-                  <Crown className="w-3 h-3" />
-                  {plan === 'monthly' ? (language === 'ne' ? 'Pro' : 'Pro') : 'Pro'}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-1 sm:gap-2">
-              {/* Offline/Pending Indicator */}
-              {!isOnline && (
-                <span className="text-xs bg-white/20 text-white px-2 py-1 rounded-full flex items-center gap-1 backdrop-blur-sm">
-                  <WifiOff className="w-3 h-3" />
-                  <span className="hidden sm:inline">Offline</span>
-                  {pendingCount > 0 && (
-                    <span className="bg-warning text-warning-foreground px-1.5 rounded-full text-[10px] font-bold">
-                      {pendingCount}
-                    </span>
-                  )}
-                </span>
-              )}
-              {/* Online but has pending */}
-              {isOnline && pendingCount > 0 && (
-                <span className="text-xs bg-warning/20 text-warning px-2 py-1 rounded-full flex items-center gap-1 backdrop-blur-sm animate-pulse">
-                  <Wifi className="w-3 h-3" />
-                  <span>{language === 'ne' ? 'पठाउँदै' : 'Sending'}...</span>
-                </span>
-              )}
-              
-              {!subscribed && (
-                <span className="text-xs text-white/80 mr-1 hidden sm:inline">
-                  {queries_used}/{queries_limit}
-                </span>
-              )}
-              
-              {/* Language Selector */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 text-white hover:bg-white/20" title="Change language">
-                    <Globe className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-[140px]">
-                  {languageOptions.map((lang) => (
-                    <DropdownMenuItem
-                      key={lang.code}
-                      onClick={() => handleLanguageChange(lang.code as 'ne' | 'hi' | 'en')}
-                      className={cn(
-                        "cursor-pointer",
-                        assistantLang === lang.code && "bg-primary/10 text-primary"
-                      )}
-                    >
-                      <span className="mr-2">{lang.flag}</span>
-                      <span>{lang.label}</span>
-                      {assistantLang === lang.code && (
-                        <span className="ml-auto text-primary">✓</span>
-                      )}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-              
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-9 w-9 sm:h-10 sm:w-10 text-white hover:bg-white/20"
-                onClick={() => setAutoSpeak(!autoSpeak)}
-                title={autoSpeak ? 'Disable auto-speak' : 'Enable auto-speak'}
-              >
-                {autoSpeak ? (
-                  <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                ) : (
-                  <VolumeX className="w-4 h-4 sm:w-5 sm:h-5 opacity-60" />
+        <div className="flex flex-col h-full bg-background">
+          {/* Modern Minimal Header */}
+          <div className="sticky top-0 z-40 bg-card/95 backdrop-blur-xl border-b border-border/30 shrink-0">
+            <div className="flex items-center justify-between px-4 h-14">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Leaf className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h1 className="font-bold text-base text-foreground leading-tight">
+                    🤖 {language === 'ne' ? 'किसान साथी AI' : 'Kisan Sathi AI'}
+                  </h1>
+                  <p className="text-[11px] text-muted-foreground">
+                    {language === 'ne' ? 'तपाईंको खेती सम्बन्धी प्रश्न सोध्नुहोस्' : 'Ask your farming questions'}
+                  </p>
+                </div>
+                {subscribed && (
+                  <span className="text-[10px] bg-accent/15 text-accent px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Crown className="w-3 h-3" />
+                    Pro
+                  </span>
                 )}
-              </Button>
-              
-              {/* Chat History Button - only for logged in users */}
-              {profile && (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-9 w-9 sm:h-10 sm:w-10 text-white hover:bg-white/20"
-                  onClick={() => setShowChatHistory(true)}
-                  title={language === 'ne' ? 'कुराकानी इतिहास' : language === 'hi' ? 'बातचीत इतिहास' : 'Chat History'}
-                >
-                  <History className="w-4 h-4 sm:w-5 sm:h-5" />
+              </div>
+              <div className="flex items-center gap-1">
+                {!isOnline && (
+                  <span className="text-[10px] bg-destructive/10 text-destructive px-2 py-1 rounded-full flex items-center gap-1">
+                    <WifiOff className="w-3 h-3" />
+                  </span>
+                )}
+                {isOnline && pendingCount > 0 && (
+                  <span className="text-[10px] bg-warning/15 text-warning px-2 py-1 rounded-full flex items-center gap-1 animate-pulse">
+                    <Wifi className="w-3 h-3" />
+                  </span>
+                )}
+                {!subscribed && (
+                  <span className="text-[10px] text-muted-foreground mr-1">
+                    {queries_used}/{queries_limit}
+                  </span>
+                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                      <Globe className="w-4 h-4 text-muted-foreground" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="min-w-[140px]">
+                    {languageOptions.map((lang) => (
+                      <DropdownMenuItem
+                        key={lang.code}
+                        onClick={() => handleLanguageChange(lang.code as 'ne' | 'hi' | 'en')}
+                        className={cn("cursor-pointer", assistantLang === lang.code && "bg-primary/10 text-primary")}
+                      >
+                        <span className="mr-2">{lang.flag}</span>
+                        <span>{lang.label}</span>
+                        {assistantLang === lang.code && <span className="ml-auto text-primary">✓</span>}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setAutoSpeak(!autoSpeak)}>
+                  {autoSpeak ? <Volume2 className="w-4 h-4 text-primary" /> : <VolumeX className="w-4 h-4 text-muted-foreground" />}
                 </Button>
-              )}
-              
-              {/* Export PDF Button - only when there are messages */}
-              {messages.length > 0 && (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-9 w-9 sm:h-10 sm:w-10 text-white hover:bg-white/20"
-                  onClick={downloadReport}
-                  disabled={isExportingPdf}
-                  title={language === 'ne' ? 'PDF डाउनलोड' : language === 'hi' ? 'PDF डाउनलोड' : 'Download PDF'}
-                >
-                  {isExportingPdf ? (
-                    <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                  ) : (
-                    <FileDown className="w-4 h-4 sm:w-5 sm:h-5" />
-                  )}
-                </Button>
-              )}
+                {profile && (
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setShowChatHistory(true)}>
+                    <History className="w-4 h-4 text-muted-foreground" />
+                  </Button>
+                )}
+                {messages.length > 0 && (
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={downloadReport} disabled={isExportingPdf}>
+                    {isExportingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4 text-muted-foreground" />}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+          <div className="flex-1 overflow-y-auto px-4 py-5 space-y-4">
             {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center">
-                {/* Welcome Card */}
+              <div className="flex flex-col items-center justify-center h-full text-center px-4">
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="krishi-welcome-card rounded-3xl p-6 sm:p-8 max-w-lg mx-auto"
+                  className="w-full max-w-md mx-auto"
                 >
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <Leaf className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
+                  {/* Welcome */}
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
+                    <Leaf className="w-8 h-8 text-primary" />
                   </div>
-                  <h2 className="font-bold text-xl sm:text-2xl text-foreground mb-2">
-                    {language === 'ne' ? 'नमस्ते!' : language === 'hi' ? 'नमस्ते!' : 'Namaste!'}
+                  <h2 className="font-bold text-xl text-foreground mb-1">
+                    {language === 'ne' ? 'नमस्ते! 👋' : language === 'hi' ? 'नमस्ते! 👋' : 'Namaste! 👋'}
                   </h2>
-                  <p className="text-muted-foreground mb-6 text-sm sm:text-base leading-relaxed">
+                  <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
                     {language === 'ne' 
-                      ? 'म Farmer Gpt। तपाईंको बालीनालीका प्रश्नहरू नेपाली वा English मा लेखेर वा बोलेर सोध्नुहोस्।' 
+                      ? 'म तपाईंको AI कृषि सहायक। खेती सम्बन्धी कुनै पनि प्रश्न सोध्नुहोस्।' 
                       : language === 'hi'
-                      ? 'मैं Farmer Gpt। अपने खेती के सवाल नेपाली, हिन्दी या English में लिखकर या बोलकर पूछें।'
-                      : "I'm Farmer Gpt. Ask your farming questions in Nepali or English by typing or speaking."}
+                      ? 'मैं आपका AI कृषि सहायक। खेती के बारे में कुछ भी पूछें।'
+                      : "I'm your AI farming assistant. Ask any farming question."}
                   </p>
                   
-                  {/* Quick Action Buttons */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Suggested Questions */}
+                  <div className="space-y-2 mb-6">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+                      {language === 'ne' ? 'सुझाव गरिएको प्रश्नहरू' : 'Suggested Questions'}
+                    </p>
                     {quickQuestions[getQuickQuestionsLang()].map((q, idx) => (
                       <motion.button
                         key={idx}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: idx * 0.1 }}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.08 }}
                         onClick={() => {
                           if ('isPhotoAction' in q && q.isPhotoAction) {
                             imageInputRef.current?.click();
@@ -1056,212 +1012,136 @@ export function OnScreenAssistant({ isFullScreen: isEmbeddedFullScreen = false, 
                         }}
                         disabled={isLoading}
                         className={cn(
-                          "flex items-center gap-3 p-4 rounded-xl border border-border bg-background/80",
-                          "hover:border-primary/50 hover:bg-primary/5 transition-all text-left",
-                          "text-sm sm:text-base touch-manipulation active:scale-95",
-                          'isPhotoAction' in q && q.isPhotoAction && "border-destructive/30 bg-destructive/5 hover:bg-destructive/10"
+                          "flex items-center gap-3 w-full p-3.5 rounded-xl border border-border/60 bg-card",
+                          "hover:border-primary/40 hover:bg-primary/5 transition-all text-left",
+                          "text-sm touch-manipulation active:scale-[0.98]",
+                          'isPhotoAction' in q && q.isPhotoAction && "border-[hsl(var(--card-diagnosis-icon))]/20 bg-[hsl(var(--card-diagnosis-bg))]"
                         )}
                       >
-                        <q.icon className={cn("w-5 h-5 sm:w-6 sm:h-6 shrink-0", q.color)} />
-                        <span className="font-medium">{q.text}</span>
+                        <div className={cn(
+                          "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0",
+                          'isPhotoAction' in q && q.isPhotoAction ? "bg-[hsl(var(--card-diagnosis-icon))]/10" : "bg-primary/8"
+                        )}>
+                          <q.icon className={cn("w-4.5 h-4.5", q.color)} />
+                        </div>
+                        <span className="font-medium text-foreground">{q.text}</span>
                       </motion.button>
                     ))}
                   </div>
                   
-                  {/* Weather Advisory Card */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                    className="mt-4"
-                  >
+                  {/* Weather Advisory */}
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
                     <WeatherAdvisoryCard language={language as 'ne' | 'hi' | 'en'} />
                   </motion.div>
                   
-                  {/* View Chat History Button for logged-in users */}
+                  {/* Chat History */}
                   {profile && (
                     <motion.button
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.5 }}
+                      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
                       onClick={() => setShowChatHistory(true)}
                       className="flex items-center justify-center gap-2 text-sm text-primary hover:text-primary/80 mt-4 py-2 transition-colors"
                     >
                       <History className="w-4 h-4" />
-                      <span>
-                        {language === 'ne' ? 'पुरानो कुराकानी हेर्नुहोस्' : 
-                         language === 'hi' ? 'पुरानी बातचीत देखें' :
-                         'View previous conversations'}
-                      </span>
+                      <span>{language === 'ne' ? 'पुरानो कुराकानी' : 'Previous chats'}</span>
                     </motion.button>
                   )}
                   
-                  {/* Voice Call Button */}
+                  {/* Voice Call */}
                   <motion.button
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.6 }}
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }}
                     onClick={() => setShowVoiceCall(true)}
-                    className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl bg-green-600 text-white font-medium hover:bg-green-700 transition-colors mt-4"
+                    className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors mt-4"
                   >
                     <Phone className="w-5 h-5" />
-                    <span>
-                      {language === 'ne' ? 'AI सँग बोल्नुहोस्' : 
-                       language === 'hi' ? 'AI से बात करें' :
-                       'Talk with AI'}
-                    </span>
+                    <span>{language === 'ne' ? 'AI सँग बोल्नुहोस्' : 'Talk with AI'}</span>
                   </motion.button>
                   
-                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mt-4 pt-4 border-t border-border/50">
-                    <Mic className="w-4 h-4 text-primary" />
-                    <span>
-                      {language === 'ne' ? 'बोल्नुहोस्, टाइप गर्नुहोस्, वा फोटो पठाउनुहोस्' : 
-                       language === 'hi' ? 'बोलें, टाइप करें, या फोटो भेजें' :
-                       'Speak, type, or send a photo'}
-                    </span>
+                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mt-4 pt-4 border-t border-border/30">
+                    <Mic className="w-3.5 h-3.5 text-primary" />
+                    <span>{language === 'ne' ? 'बोल्नुहोस्, टाइप गर्नुहोस्, वा फोटो पठाउनुहोस्' : 'Speak, type, or send a photo'}</span>
                   </div>
                 </motion.div>
               </div>
             ) : (
-              <div className="max-w-3xl mx-auto space-y-4">
+              <div className="max-w-2xl mx-auto space-y-3">
                 {messages.map((msg, i) => {
-                  // Render disease detection result with special component
                   if (msg.diseaseResult) {
-                    // Find the user message with image that triggered this result
                     const userMsgWithImage = messages.slice(0, i).reverse().find(m => m.role === 'user' && m.imageUrl);
                     const imageUrl = userMsgWithImage?.imageUrl || '';
-                    
                     return (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="max-w-[90%] mr-auto"
-                      >
-                        <DiseaseDetectionResult 
-                          result={msg.diseaseResult}
-                          language={language}
-                          onSpeak={ttsSupported ? (text) => speak(text) : undefined}
-                          isSpeaking={isSpeaking}
-                          onSave={profile ? () => handleSaveDiseaseResult(i, imageUrl, msg.diseaseResult!) : undefined}
-                          isSaved={msg.isSaved}
-                          imageUrl={imageUrl}
-                        />
+                      <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="max-w-[90%] mr-auto">
+                        <DiseaseDetectionResult result={msg.diseaseResult} language={language} onSpeak={ttsSupported ? (text) => speak(text) : undefined} isSpeaking={isSpeaking} onSave={profile ? () => handleSaveDiseaseResult(i, imageUrl, msg.diseaseResult!) : undefined} isSaved={msg.isSaved} imageUrl={imageUrl} />
                       </motion.div>
                     );
                   }
 
-                  // Render analyzing state
                   if (msg.isAnalyzing) {
                     return (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="krishi-chat-bubble-assistant rounded-2xl p-4 mr-auto flex items-center gap-3 max-w-[85%]"
-                      >
+                      <motion.div key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-3 p-4 rounded-2xl rounded-bl-md bg-card border border-border/40 mr-auto max-w-[85%]">
                         <div className="relative">
-                          <Scan className="w-6 h-6 text-primary" />
-                          <motion.div
-                            className="absolute inset-0 border-2 border-primary/50 rounded"
-                            animate={{ scale: [1, 1.3, 1], opacity: [1, 0, 1] }}
-                            transition={{ repeat: Infinity, duration: 1.5 }}
-                          />
+                          <Scan className="w-5 h-5 text-primary" />
+                          <motion.div className="absolute inset-0 border-2 border-primary/50 rounded" animate={{ scale: [1, 1.3, 1], opacity: [1, 0, 1] }} transition={{ repeat: Infinity, duration: 1.5 }} />
                         </div>
                         <div>
-                          <span className="text-sm font-medium text-foreground">
-                            {language === 'ne' ? '🔬 फोटो विश्लेषण गर्दैछु...' : language === 'hi' ? '🔬 फोटो का विश्लेषण कर रहा हूँ...' : '🔬 Analyzing photo...'}
-                          </span>
-                          <p className="text-xs text-muted-foreground">
-                            {language === 'ne' ? 'रोग र कीरा खोज्दैछु' : language === 'hi' ? 'रोग और कीट खोज रहा हूँ' : 'Detecting diseases and pests'}
-                          </p>
+                          <span className="text-sm font-medium text-foreground">{language === 'ne' ? '🔬 फोटो विश्लेषण गर्दैछु...' : '🔬 Analyzing...'}</span>
+                          <p className="text-[11px] text-muted-foreground">{language === 'ne' ? 'रोग र कीरा खोज्दैछु' : 'Detecting diseases'}</p>
                         </div>
                       </motion.div>
                     );
                   }
 
-                  // Regular message rendering
                   return (
                     <motion.div
                       key={i}
-                      initial={{ opacity: 0, y: 10 }}
+                      initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       className={cn(
-                        "p-4 text-sm sm:text-base max-w-[85%]",
-                        msg.role === 'user'
-                          ? "krishi-chat-bubble-user text-primary-foreground ml-auto"
-                          : "krishi-chat-bubble-assistant mr-auto"
+                        "max-w-[85%]",
+                        msg.role === 'user' ? "ml-auto" : "mr-auto"
                       )}
                     >
-                      {/* Pending queue indicator for user messages */}
-                      {msg.role === 'user' && msg.isOffline && (
-                        <div className="flex items-center gap-1 mb-2 text-xs opacity-80">
-                          <WifiOff className="w-3 h-3" />
-                          <span>{language === 'ne' ? '📤 पठाउन बाँकी' : '📤 Queued'}</span>
-                        </div>
-                      )}
-                      {/* Show image if present */}
-                      {msg.imageUrl && (
-                        <div className="mb-3 rounded-xl overflow-hidden border border-white/20">
-                          <img 
-                            src={msg.imageUrl} 
-                            alt="Crop photo" 
-                            className="max-w-full max-h-48 object-contain rounded-xl"
-                          />
-                        </div>
-                      )}
-                      <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                      {/* Offline indicator */}
-                      {msg.isOffline && (
-                        <div className="flex items-center gap-1 mt-2 text-xs opacity-70">
-                          <WifiOff className="w-3 h-3" />
-                          <span>{language === 'ne' ? 'अफलाइन जवाफ' : language === 'hi' ? 'ऑफलाइन जवाब' : 'Offline response'}</span>
-                        </div>
-                      )}
-                      {/* Voice button for assistant messages */}
+                      <div className={cn(
+                        "p-3.5 text-sm leading-relaxed",
+                        msg.role === 'user'
+                          ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
+                          : "bg-card border border-border/40 rounded-2xl rounded-bl-md text-foreground"
+                      )}>
+                        {msg.role === 'user' && msg.isOffline && (
+                          <div className="flex items-center gap-1 mb-1.5 text-[10px] opacity-80">
+                            <WifiOff className="w-3 h-3" />
+                            <span>📤 {language === 'ne' ? 'पठाउन बाँकी' : 'Queued'}</span>
+                          </div>
+                        )}
+                        {msg.imageUrl && (
+                          <div className="mb-2.5 rounded-xl overflow-hidden">
+                            <img src={msg.imageUrl} alt="" className="max-w-full max-h-48 object-contain rounded-xl" />
+                          </div>
+                        )}
+                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                        {msg.isOffline && (
+                          <div className="flex items-center gap-1 mt-1.5 text-[10px] opacity-70">
+                            <WifiOff className="w-3 h-3" />
+                            <span>{language === 'ne' ? 'अफलाइन जवाफ' : 'Offline'}</span>
+                          </div>
+                        )}
+                      </div>
                       {msg.role === 'assistant' && ttsSupported && !msg.diseaseResult && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="mt-3 h-8 px-3 text-xs bg-background/50 hover:bg-background/80 rounded-full"
-                          onClick={() => isSpeaking ? stop() : speak(msg.content)}
-                        >
-                          {isSpeaking ? (
-                            <VolumeX className="w-3.5 h-3.5 mr-1.5" />
-                          ) : (
-                            <Volume2 className="w-3.5 h-3.5 mr-1.5" />
-                          )}
-                          {isSpeaking 
-                            ? (language === 'ne' ? 'रोक्नुहोस्' : language === 'hi' ? 'रोकें' : 'Stop') 
-                            : (language === 'ne' ? 'सुन्नुहोस्' : language === 'hi' ? 'सुनें' : 'Listen')}
+                        <Button variant="ghost" size="sm" className="mt-1 h-7 px-2.5 text-[10px] text-muted-foreground rounded-full" onClick={() => isSpeaking ? stop() : speak(msg.content)}>
+                          {isSpeaking ? <VolumeX className="w-3 h-3 mr-1" /> : <Volume2 className="w-3 h-3 mr-1" />}
+                          {isSpeaking ? (language === 'ne' ? 'रोक्नुहोस्' : 'Stop') : (language === 'ne' ? 'सुन्नुहोस्' : 'Listen')}
                         </Button>
                       )}
                     </motion.div>
                   );
                 })}
                 {isLoading && messages[messages.length - 1]?.role === 'user' && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="krishi-chat-bubble-assistant rounded-2xl p-4 mr-auto flex items-center gap-3 max-w-[85%]"
-                  >
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 p-3.5 rounded-2xl rounded-bl-md bg-card border border-border/40 mr-auto max-w-[85%]">
                     <div className="flex gap-1">
-                      <motion.div 
-                        className="w-2 h-2 rounded-full bg-primary"
-                        animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
-                        transition={{ repeat: Infinity, duration: 0.6, delay: 0 }}
-                      />
-                      <motion.div 
-                        className="w-2 h-2 rounded-full bg-primary"
-                        animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
-                        transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }}
-                      />
-                      <motion.div 
-                        className="w-2 h-2 rounded-full bg-primary"
-                        animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
-                        transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }}
-                      />
+                      <motion.div className="w-2 h-2 rounded-full bg-primary" animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0 }} />
+                      <motion.div className="w-2 h-2 rounded-full bg-primary" animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} />
+                      <motion.div className="w-2 h-2 rounded-full bg-primary" animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} />
                     </div>
+                    <span className="text-xs text-muted-foreground">{language === 'ne' ? 'सोच्दैछ...' : 'Thinking...'}</span>
                   </motion.div>
                 )}
                 <div ref={messagesEndRef} />
@@ -1269,171 +1149,75 @@ export function OnScreenAssistant({ isFullScreen: isEmbeddedFullScreen = false, 
             )}
           </div>
 
-          {/* Input Area - Farm friendly soft background */}
-          <div className="p-4 sm:p-6 pb-14 sm:pb-16 border-t border-border/50 bg-card/80 backdrop-blur-sm shrink-0">
-            <div className="max-w-3xl mx-auto space-y-3">
-              {/* Selected Image Preview */}
+          {/* Input Area */}
+          <div className="border-t border-border/30 bg-card/95 backdrop-blur-xl p-4 pb-20 shrink-0">
+            <div className="max-w-2xl mx-auto space-y-3">
               {selectedImage && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="relative inline-block"
-                >
-                  <img 
-                    src={selectedImage} 
-                    alt="Selected crop" 
-                    className="max-h-24 rounded-xl border-2 border-primary/30 shadow-md"
-                  />
-                  <button
-                    onClick={removeSelectedImage}
-                    className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center text-xs shadow-md"
-                  >
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative inline-block">
+                  <img src={selectedImage} alt="" className="max-h-20 rounded-xl border border-border/60" />
+                  <button onClick={removeSelectedImage} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center">
                     <X className="w-3 h-3" />
                   </button>
                 </motion.div>
               )}
               
-              <div className="flex gap-2 sm:gap-3">
-                {/* Image Upload Button */}
-                <input
-                  ref={imageInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handleImageSelect}
-                  className="hidden"
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => imageInputRef.current?.click()}
-                  disabled={isLoading || !!selectedImage}
-                  className="shrink-0 h-12 w-12 sm:h-14 sm:w-14 touch-manipulation rounded-xl border-2 hover:border-primary/50 hover:bg-primary/5"
-                  title={language === 'ne' ? 'फोटो थप्नुहोस्' : language === 'hi' ? 'फोटो जोड़ें' : 'Add photo'}
-                >
-                  <ImagePlus className="w-5 h-5 sm:w-6 sm:h-6" />
+              <div className="flex gap-2">
+                <input ref={imageInputRef} type="file" accept="image/*" capture="environment" onChange={handleImageSelect} className="hidden" />
+                <Button variant="outline" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isLoading || !!selectedImage} className="shrink-0 h-12 w-12 rounded-xl border-border/60 hover:border-primary/40 hover:bg-primary/5 touch-manipulation">
+                  <ImagePlus className="w-5 h-5 text-muted-foreground" />
                 </Button>
-                
-                <Button
-                  variant={isListening ? "destructive" : "outline"}
-                  size="icon"
-                  onClick={toggleListening}
-                  disabled={isLoading}
-                  className={cn(
-                    "shrink-0 h-12 w-12 sm:h-14 sm:w-14 touch-manipulation rounded-xl border-2",
-                    !isListening && "hover:border-primary/50 hover:bg-primary/5"
-                  )}
-                  title={language === 'ne' ? 'बोल्नुहोस्' : language === 'hi' ? 'बोलें' : 'Speak'}
-                >
+                <Button variant={isListening ? "destructive" : "outline"} size="icon" onClick={toggleListening} disabled={isLoading} className={cn("shrink-0 h-12 w-12 rounded-xl touch-manipulation", !isListening && "border-border/60 hover:border-primary/40 hover:bg-primary/5")}>
                   {isListening ? (
-                    <motion.div
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ repeat: Infinity, duration: 0.5 }}
-                    >
-                      <MicOff className="w-5 h-5 sm:w-6 sm:h-6" />
+                    <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 0.5 }}>
+                      <MicOff className="w-5 h-5" />
                     </motion.div>
                   ) : (
-                    <Mic className="w-5 h-5 sm:w-6 sm:h-6" />
+                    <Mic className="w-5 h-5 text-muted-foreground" />
                   )}
                 </Button>
                 <Input
-                  ref={inputRefToUse as RefObject<HTMLInputElement>}
+                  ref={inputRefToUse}
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                  placeholder={
-                    selectedImage
-                      ? (language === 'ne' ? 'फोटोको बारेमा सोध्नुहोस्...' : language === 'hi' ? 'फोटो के बारे में पूछें...' : 'Ask about the photo...')
-                      : (language === 'ne' ? 'तपाईंको प्रश्न यहाँ लेख्नुहोस्...' : language === 'hi' ? 'अपना सवाल यहाँ लिखें...' : 'Type your question here...')
-                  }
+                  placeholder={selectedImage ? (language === 'ne' ? 'फोटोको बारेमा...' : 'About photo...') : (language === 'ne' ? 'प्रश्न सोध्नुहोस्...' : 'Ask something...')}
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                   disabled={isLoading || isListening}
-                  className="flex-1 h-12 sm:h-14 text-base sm:text-lg rounded-xl px-4 border-2 focus:border-primary"
+                  className="flex-1 h-12 text-sm rounded-xl border-border/60 bg-background"
                 />
-                <Button
-                  onClick={() => handleSendMessage()}
-                  disabled={(!inputText.trim() && !selectedImage) || isLoading}
-                  size="icon"
-                  className="shrink-0 h-12 w-12 sm:h-14 sm:w-14 touch-manipulation rounded-xl shadow-md"
-                >
-                  <Send className="w-5 h-5 sm:w-6 sm:h-6" />
+                <Button onClick={() => handleSendMessage()} disabled={(!inputText.trim() && !selectedImage) || isLoading} size="icon" className="shrink-0 h-12 w-12 rounded-xl touch-manipulation">
+                  <Send className="w-5 h-5" />
                 </Button>
               </div>
               
               {isListening && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex items-center justify-center gap-2 py-2 px-4 rounded-full bg-primary/10 border border-primary/20 mx-auto w-fit"
-                >
-                  <motion.div
-                    animate={{ scale: [1, 1.3, 1] }}
-                    transition={{ repeat: Infinity, duration: 0.6 }}
-                    className="w-2.5 h-2.5 rounded-full bg-destructive"
-                  />
-                  <span className="text-sm text-primary font-medium">
-                    {language === 'ne' ? 'सुन्दैछु... बोल्नुहोस्' : language === 'hi' ? 'सुन रहा हूँ... बोलें' : 'Listening... speak now'}
-                  </span>
-                </motion.div>
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-center text-primary">
+                  🎤 {language === 'ne' ? 'सुन्दैछ...' : 'Listening...'}
+                </motion.p>
               )}
-              
-              {/* Quick Actions */}
-              <div className="flex flex-wrap gap-2 justify-center">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => imageInputRef.current?.click()}
-                  disabled={isLoading || !!selectedImage}
-                  className="text-xs sm:text-sm h-9 sm:h-10 touch-manipulation rounded-lg"
-                >
-                  <Camera className="w-4 h-4 mr-1.5" />
-                  {language === 'ne' ? 'फोटो पठाउनुहोस्' : language === 'hi' ? 'फोटो भेजें' : 'Send Photo'}
-                </Button>
+
+              {/* Bottom actions */}
+              <div className="flex gap-2">
                 {messages.length > 0 && (
                   <>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={retryLastMessage}
-                      className="text-xs sm:text-sm h-9 sm:h-10 touch-manipulation rounded-lg"
-                      title={language === 'ne' ? 'फेरि प्रयास' : 'Retry'}
-                    >
-                      <RefreshCw className="w-4 h-4 mr-1.5" />
-                      {language === 'ne' ? 'फेरि' : language === 'hi' ? 'दोबारा' : 'Retry'}
+                    <Button variant="outline" size="sm" onClick={retryLastMessage} className="text-xs h-8 rounded-full flex-1">
+                      <RefreshCw className="w-3.5 h-3.5 mr-1" />
+                      {language === 'ne' ? 'फेरि' : 'Retry'}
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={downloadReport}
-                      className="text-xs sm:text-sm h-9 sm:h-10 touch-manipulation rounded-lg"
-                      title={language === 'ne' ? 'रिपोर्ट' : 'Report'}
-                    >
-                      <Download className="w-4 h-4 mr-1.5" />
-                      {language === 'ne' ? 'रिपोर्ट' : language === 'hi' ? 'रिपोर्ट' : 'Report'}
+                    <Button variant="outline" size="sm" onClick={downloadReport} className="text-xs h-8 rounded-full">
+                      <Download className="w-3.5 h-3.5 mr-1" />
+                      {language === 'ne' ? 'रिपोर्ट' : 'Report'}
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={clearChat}
-                      className="text-xs sm:text-sm h-9 sm:h-10 text-muted-foreground touch-manipulation rounded-lg"
-                    >
-                      {language === 'ne' ? 'मेटाउनुहोस्' : language === 'hi' ? 'मिटाएं' : 'Clear'}
+                    <Button variant="ghost" size="sm" onClick={clearChat} className="text-xs h-8 rounded-full text-muted-foreground">
+                      {language === 'ne' ? 'मेटाउनुहोस्' : 'Clear'}
                     </Button>
                   </>
                 )}
               </div>
               
-              {/* Subscription CTA for free users */}
               {!subscribed && !subLoading && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setShowSubscriptionModal(true)}
-                  className="w-full text-xs sm:text-sm bg-accent/10 hover:bg-accent/20 text-accent h-10 touch-manipulation rounded-lg"
-                >
-                  <Crown className="w-4 h-4 mr-1.5" />
-                  {language === 'ne' ? 'असीमित सल्लाहका लागि सदस्यता लिनुहोस्' : 
-                   language === 'hi' ? 'असीमित सलाह के लिए सदस्यता लें' :
-                   'Subscribe for unlimited advice'}
+                <Button variant="ghost" size="sm" onClick={() => setShowSubscriptionModal(true)} className="w-full text-xs bg-accent/8 hover:bg-accent/15 text-accent h-9 rounded-full">
+                  <Crown className="w-3.5 h-3.5 mr-1.5" />
+                  {language === 'ne' ? 'असीमित सल्लाहका लागि सदस्यता' : 'Subscribe for unlimited advice'}
                 </Button>
               )}
             </div>
