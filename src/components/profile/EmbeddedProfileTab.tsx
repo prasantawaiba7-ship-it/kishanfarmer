@@ -324,8 +324,47 @@ export function EmbeddedProfileTab() {
         </div>
       )}
 
-      {/* Settings cards */}
+      {/* Account Section */}
       <div className="space-y-4">
+        <h2 className="text-sm font-bold text-foreground flex items-center gap-1.5 px-1">
+          <span className="text-base">⚙️</span> Account Settings
+        </h2>
+
+        <Card className="border-border/30 shadow-sm overflow-hidden">
+          <CardContent className="p-0 divide-y divide-border/30">
+            {/* Language */}
+            <div className="flex items-center gap-3 px-4 py-3.5">
+              <div className="w-9 h-9 rounded-xl bg-primary/8 flex items-center justify-center flex-shrink-0">
+                <span className="text-base">🌐</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground">Language</p>
+                <p className="text-[11px] text-muted-foreground">भाषा सेटिङ परिवर्तन गर्नुहोस्</p>
+              </div>
+            </div>
+            {/* Notifications */}
+            <div className="flex items-center gap-3 px-4 py-3.5">
+              <div className="w-9 h-9 rounded-xl bg-primary/8 flex items-center justify-center flex-shrink-0">
+                <span className="text-base">🔔</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground">Notifications</p>
+                <p className="text-[11px] text-muted-foreground">सूचना प्राथमिकताहरू</p>
+              </div>
+            </div>
+            {/* Help & Support */}
+            <div className="flex items-center gap-3 px-4 py-3.5">
+              <div className="w-9 h-9 rounded-xl bg-primary/8 flex items-center justify-center flex-shrink-0">
+                <span className="text-base">❓</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground">Help & Support</p>
+                <p className="text-[11px] text-muted-foreground">सहायता र समर्थन</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <SubscriptionCard />
         <NotificationPreferencesCard />
         <WeatherAlertSettingsCard />
@@ -333,16 +372,15 @@ export function EmbeddedProfileTab() {
         <GeneralFeedbackForm />
       </div>
 
-      {/* Logout Button */}
-      <div className="mt-6 mb-4">
-        <Button
-          variant="outline"
-          className="w-full gap-2 text-destructive border-destructive/30 hover:bg-destructive/10 rounded-xl h-12"
+      {/* Logout Button — clean, non-intrusive */}
+      <div className="mt-8 mb-6">
+        <button
           onClick={() => setShowLogoutDialog(true)}
+          className="w-full flex items-center justify-center gap-2.5 h-[52px] rounded-xl border border-destructive/25 bg-card text-destructive text-sm font-medium hover:bg-destructive/5 active:scale-[0.98] transition-all"
         >
           <LogOut className="w-4 h-4" />
           🚪 Logout
-        </Button>
+        </button>
       </div>
 
       {/* Logout Dialog */}
