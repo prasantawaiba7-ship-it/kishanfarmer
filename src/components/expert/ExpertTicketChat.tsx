@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, ImagePlus, User, Shield, FileText } from 'lucide-react';
+import { TicketFeedbackCard } from '@/components/feedback/TicketFeedbackCard';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/useAuth';
@@ -15,9 +16,12 @@ interface ExpertTicketChatProps {
   senderRole?: 'farmer' | 'technician';
   farmId?: string | null;
   farmCropId?: string | null;
+  ticketStatus?: string;
+  satisfactionScore?: number | null;
+  feedbackAt?: string | null;
 }
 
-export function ExpertTicketChat({ ticketId, cropName, senderRole = 'farmer', farmId, farmCropId }: ExpertTicketChatProps) {
+export function ExpertTicketChat({ ticketId, cropName, senderRole = 'farmer', farmId, farmCropId, ticketStatus, satisfactionScore, feedbackAt }: ExpertTicketChatProps) {
   const { user } = useAuth();
   const { data: messages, isLoading } = useExpertTicketMessages(ticketId);
   const sendMessage = useSendExpertTicketMessage();
@@ -115,6 +119,17 @@ export function ExpertTicketChat({ ticketId, cropName, senderRole = 'farmer', fa
           <p className="text-center text-sm text-muted-foreground py-8">कुनै सन्देश छैन।</p>
         )}
       </div>
+
+      {/* Feedback card: show when ticket is answered and farmer hasn't given feedback yet */}
+      {senderRole === 'farmer' && ticketStatus === 'answered' && (
+        <div className="px-4 pb-2">
+          <TicketFeedbackCard
+            ticketId={ticketId}
+            alreadySubmitted={!!feedbackAt}
+            existingScore={satisfactionScore || undefined}
+          />
+        </div>
+      )}
 
       <div className="border-t border-border/40 p-3">
         {/* Recommendation templates start */}

@@ -2047,54 +2047,93 @@ export type Database = {
       }
       expert_tickets: {
         Row: {
+          closed_at: string | null
           created_at: string
           crop_name: string
+          escalated_at: string | null
+          escalation_reason: string | null
           farm_crop_id: string | null
           farm_id: string | null
+          farmer_feedback: string | null
           farmer_id: string
           farmer_phone: string | null
+          feedback_at: string | null
+          first_response_at: string | null
+          first_response_source: string | null
+          handled_by: string | null
           has_unread_farmer: boolean
           has_unread_technician: boolean
           id: string
+          needs_expert_review: boolean | null
           office_id: string
           problem_description: string
           problem_title: string
+          resolution_status: string | null
+          risk_level: string | null
+          satisfaction_score: number | null
           status: string
           technician_id: string | null
+          triage_tags: string[] | null
           updated_at: string
         }
         Insert: {
+          closed_at?: string | null
           created_at?: string
           crop_name: string
+          escalated_at?: string | null
+          escalation_reason?: string | null
           farm_crop_id?: string | null
           farm_id?: string | null
+          farmer_feedback?: string | null
           farmer_id: string
           farmer_phone?: string | null
+          feedback_at?: string | null
+          first_response_at?: string | null
+          first_response_source?: string | null
+          handled_by?: string | null
           has_unread_farmer?: boolean
           has_unread_technician?: boolean
           id?: string
+          needs_expert_review?: boolean | null
           office_id: string
           problem_description: string
           problem_title: string
+          resolution_status?: string | null
+          risk_level?: string | null
+          satisfaction_score?: number | null
           status?: string
           technician_id?: string | null
+          triage_tags?: string[] | null
           updated_at?: string
         }
         Update: {
+          closed_at?: string | null
           created_at?: string
           crop_name?: string
+          escalated_at?: string | null
+          escalation_reason?: string | null
           farm_crop_id?: string | null
           farm_id?: string | null
+          farmer_feedback?: string | null
           farmer_id?: string
           farmer_phone?: string | null
+          feedback_at?: string | null
+          first_response_at?: string | null
+          first_response_source?: string | null
+          handled_by?: string | null
           has_unread_farmer?: boolean
           has_unread_technician?: boolean
           id?: string
+          needs_expert_review?: boolean | null
           office_id?: string
           problem_description?: string
           problem_title?: string
+          resolution_status?: string | null
+          risk_level?: string | null
+          satisfaction_score?: number | null
           status?: string
           technician_id?: string | null
+          triage_tags?: string[] | null
           updated_at?: string
         }
         Relationships: [
@@ -3763,6 +3802,50 @@ export type Database = {
             columns: ["office_id"]
             isOneToOne: false
             referencedRelation: "ag_offices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_events: {
+        Row: {
+          actor_id: string | null
+          actor_type: string | null
+          created_at: string
+          event_type: string
+          from_status: string | null
+          id: string
+          metadata: Json | null
+          ticket_id: string
+          to_status: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_type?: string | null
+          created_at?: string
+          event_type: string
+          from_status?: string | null
+          id?: string
+          metadata?: Json | null
+          ticket_id: string
+          to_status?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          actor_type?: string | null
+          created_at?: string
+          event_type?: string
+          from_status?: string | null
+          id?: string
+          metadata?: Json | null
+          ticket_id?: string
+          to_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_events_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "expert_tickets"
             referencedColumns: ["id"]
           },
         ]

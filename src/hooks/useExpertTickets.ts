@@ -208,6 +208,62 @@ export function useIsExpert() {
   });
 }
 
+// --- Triage: classify risk level based on problem text ---
+function classifyRiskLevel(title: string, description: string): { riskLevel: string; needsExpertReview: boolean; triageTags: string[] } {
+  const text = `${title} ${description}`.toLowerCase();
+  const tags: string[] = [];
+
+  // High-risk keywords
+  const highRiskPatterns = [
+    /outbreak|epidemic|widespread|महामारी|फैलिरहेको|व्यापक/i,
+    /poison|विष|विषाक्त|मरेको|dead animals|dying/i,
+    /entire field|सबै खेत|पुरै खेत|all plants|सबै बोट/i,
+    /heavy chemical|धेरै रसायन|pesticide.*dose|spray.*how much/i,
+    /urgent|emergency|तुरुन्त|जरुरी/i,
+  ];
+
+  const mediumRiskPatterns = [
+    /disease|रोग|blight|blast|wilt|rot|rust|virus|ढुसी|कुहिने/i,
+    /pest|कीरा|borer|armyworm|aphid|hopper|moth|caterpillar|माहू|लाही/i,
+    /chemical|spray|रसायन|छर्ने|fungicide|insecticide|कीटनाशक/i,
+    /yellow|turning|सुक्दै|पहेँलो|ओइलाउँदै|wilting/i,
+    /large area|ठूलो क्षेत्र|bigha|hectare|बिघा|हेक्टर/i,
+  ];
+
+  let riskLevel = 'low';
+  let needsExpertReview = false;
+
+  for (const pattern of highRiskPatterns) {
+    if (pattern.test(text)) {
+      riskLevel = 'high';
+      needsExpertReview = true;
+      tags.push('high_risk_keyword');
+      break;
+    }
+  }
+
+  if (riskLevel === 'low') {
+    let mediumHits = 0;
+    for (const pattern of mediumRiskPatterns) {
+      if (pattern.test(text)) {
+        mediumHits++;
+        if (mediumHits >= 2) {
+          riskLevel = 'medium';
+          needsExpertReview = true;
+          tags.push('multiple_risk_indicators');
+          break;
+        }
+      }
+    }
+    if (mediumHits === 1) {
+      riskLevel = 'medium';
+      tags.push('single_risk_indicator');
+    }
+  }
+
+  return { riskLevel, needsExpertReview, triageTags: tags };
+}
+
 // --- Mutations ---
 
 export function useCreateExpertTicket() {
@@ -227,7 +283,9 @@ export function useCreateExpertTicket() {
       farmId?: string;
       farmCropId?: string;
     }) => {
-      // Ticket goes directly to the chosen technician
+      // Classify risk level
+      const { riskLevel, needsExpertReview, triageTags } = classifyRiskLevel(data.problemTitle, data.problemDescription);
+
       const insertData: any = {
         farmer_id: user!.id,
         office_id: data.officeId,
@@ -241,6 +299,11 @@ export function useCreateExpertTicket() {
         has_unread_farmer: false,
         farm_id: data.farmId || null,
         farm_crop_id: data.farmCropId || null,
+        risk_level: riskLevel,
+        needs_expert_review: needsExpertReview,
+        triage_tags: triageTags,
+        first_response_source: 'expert',
+        handled_by: 'expert',
       };
 
       const { data: ticket, error } = await (supabase as any)
@@ -249,6 +312,16 @@ export function useCreateExpertTicket() {
         .select()
         .single();
       if (error) throw error;
+
+      // Log creation event
+      await (supabase as any).from('ticket_events').insert({
+        ticket_id: ticket.id,
+        event_type: 'created',
+        to_status: 'open',
+        actor_id: user!.id,
+        actor_type: 'farmer',
+        metadata: { risk_level: riskLevel, triage_tags: triageTags },
+      });
 
       // Insert first message
       const firstMsg: any = {
@@ -326,6 +399,53 @@ export function useSendExpertTicketMessage() {
     },
     onError: () => {
       toast({ title: 'सन्देश पठाउन सकिएन', variant: 'destructive' });
+    },
+  });
+}
+
+// --- Feedback mutation ---
+export function useSubmitTicketFeedback() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      ticketId: string;
+      satisfactionScore: number;
+      feedback?: string;
+      resolutionStatus: 'resolved' | 'unresolved' | 'followup_needed';
+    }) => {
+      const { error } = await (supabase as any)
+        .from('expert_tickets')
+        .update({
+          satisfaction_score: data.satisfactionScore,
+          farmer_feedback: data.feedback || null,
+          resolution_status: data.resolutionStatus,
+          feedback_at: new Date().toISOString(),
+        })
+        .eq('id', data.ticketId)
+        .eq('farmer_id', user!.id);
+      if (error) throw error;
+
+      // Log feedback event
+      await (supabase as any).from('ticket_events').insert({
+        ticket_id: data.ticketId,
+        event_type: 'feedback_received',
+        actor_id: user!.id,
+        actor_type: 'farmer',
+        metadata: {
+          satisfaction_score: data.satisfactionScore,
+          resolution_status: data.resolutionStatus,
+        },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-expert-tickets'] });
+      toast({ title: '✅ प्रतिक्रिया दिइयो', description: 'धन्यवाद! तपाईंको प्रतिक्रिया दर्ता भयो।' });
+    },
+    onError: () => {
+      toast({ title: 'त्रुटि', description: 'प्रतिक्रिया पठाउन सकिएन।', variant: 'destructive' });
     },
   });
 }
