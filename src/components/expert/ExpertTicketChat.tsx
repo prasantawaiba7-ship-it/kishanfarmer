@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, ImagePlus, User, Shield, FileText, Phone, Clock, CheckCircle2, XCircle, X } from 'lucide-react';
+import { Send, Loader2, ImagePlus, User, Shield, FileText, Phone, PhoneCall, PhoneOff, PhoneIncoming, Clock, CheckCircle2, XCircle, X, AlertTriangle } from 'lucide-react';
 import { TicketFeedbackCard } from '@/components/feedback/TicketFeedbackCard';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
