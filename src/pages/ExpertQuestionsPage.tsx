@@ -26,6 +26,7 @@ export default function ExpertQuestionsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: tickets, isLoading } = useMyExpertTickets();
+  const queryClient = useQueryClient();
   const [selectedTicket, setSelectedTicket] = useState<ExpertTicket | null>(null);
 
   if (!user) { navigate('/auth'); return null; }
