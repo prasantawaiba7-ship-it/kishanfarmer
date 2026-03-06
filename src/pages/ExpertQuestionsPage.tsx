@@ -89,11 +89,24 @@ export default function ExpertQuestionsPage() {
                     <Card
                       className={`cursor-pointer hover:shadow-md transition-all ${ticket.has_unread_farmer ? 'ring-2 ring-primary/30' : ''}`}
                       onClick={async () => {
-                        // Mark as read
+                        // Mark ticket and related farmer_notifications as read
                         if (ticket.has_unread_farmer) {
                           const { supabase } = await import('@/integrations/supabase/client');
                           await (supabase as any).from('expert_tickets').update({ has_unread_farmer: false }).eq('id', ticket.id);
                         }
+                        // Also mark farmer_notifications for this ticket as read
+                        try {
+                          const { supabase } = await import('@/integrations/supabase/client');
+                          const { data: profile } = await supabase.from('farmer_profiles').select('id').eq('user_id', user!.id).maybeSingle();
+                          if (profile?.id) {
+                            await (supabase as any)
+                              .from('farmer_notifications')
+                              .update({ read: true })
+                              .eq('farmer_id', profile.id)
+                              .eq('read', false)
+                              .filter('data->>case_id', 'eq', ticket.id);
+                          }
+                        } catch {}
                         setSelectedTicket(ticket);
                       }}
                     >
