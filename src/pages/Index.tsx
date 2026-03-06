@@ -5,6 +5,7 @@ import { PageTransition } from "@/components/layout/PageTransition";
 import { Helmet } from "react-helmet-async";
 import WelcomeOnboarding from "@/components/onboarding/WelcomeOnboarding";
 import HomeScreen from "@/components/home/HomeScreen";
+import HowItWorksSection from "@/components/home/HowItWorksSection";
 
 const ONBOARDING_KEY = "kisan_sathi_onboarding_done";
 
@@ -41,6 +42,7 @@ const Index = () => {
         <PageTransition>
           <main>
             <HomeScreen />
+            <HowItWorksSection />
           </main>
         </PageTransition>
         <Footer />
