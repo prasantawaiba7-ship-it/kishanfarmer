@@ -11,7 +11,8 @@ import { useCurrentTechnician } from '@/hooks/useCurrentTechnician';
 import { useExpertAssignedTickets, type ExpertTicket } from '@/hooks/useExpertTickets';
 import { ExpertTicketChat } from '@/components/expert/ExpertTicketChat';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Loader2, CheckCircle2, Eye, XCircle, MessageCircle, Shield, ShieldCheck } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft, Loader2, CheckCircle2, Eye, XCircle, MessageCircle, Shield, ShieldCheck, Phone } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 const STATUS_FILTERS = [
@@ -36,6 +37,23 @@ export default function ExpertDashboardPage() {
   const { data: tickets, isLoading: ticketsLoading } = useExpertAssignedTickets(currentTech?.id, currentTech?.is_expert);
   const [selectedTicket, setSelectedTicket] = useState<ExpertTicket | null>(null);
   const [statusFilter, setStatusFilter] = useState('all');
+
+  // Fetch pending call requests for this technician
+  const { data: pendingCallRequests } = useQuery({
+    queryKey: ['pending-call-requests', currentTech?.id],
+    queryFn: async () => {
+      if (!currentTech?.id) return {};
+      const { data } = await (supabase as any)
+        .from('call_requests')
+        .select('ticket_id, status')
+        .eq('technician_id', currentTech.id)
+        .in('status', ['requested', 'accepted']);
+      const map: Record<string, string> = {};
+      (data || []).forEach((r: any) => { map[r.ticket_id] = r.status; });
+      return map;
+    },
+    enabled: !!currentTech?.id,
+  });
 
   if (!user) { navigate('/auth'); return null; }
 
@@ -162,7 +180,14 @@ export default function ExpertDashboardPage() {
                               )}
                             </div>
                             <h3 className="font-semibold text-sm text-foreground truncate">{ticket.problem_title}</h3>
-                            <p className="text-xs text-muted-foreground">🌾 {ticket.crop_name} • {ticket.office?.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              🌾 {ticket.crop_name} • {ticket.office?.name}
+                              {pendingCallRequests?.[ticket.id] && (
+                                <span className="ml-2 inline-flex items-center gap-1 text-primary font-medium">
+                                  <Phone className="w-3 h-3" /> Call {pendingCallRequests[ticket.id] === 'requested' ? 'अनुरोध' : 'स्वीकृत'}
+                                </span>
+                              )}
+                            </p>
                           </div>
                           <p className="text-[10px] text-muted-foreground flex-shrink-0">
                             {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true })}
