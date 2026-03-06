@@ -190,7 +190,7 @@ function TechnicianCallRequestPanel({ callRequest, updateCallStatus }: { callReq
   );
 }
 
-
+interface ExpertTicketChatProps {
   ticketId: string;
   cropName?: string;
   senderRole?: 'farmer' | 'technician';
