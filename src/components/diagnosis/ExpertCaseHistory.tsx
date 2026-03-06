@@ -26,7 +26,12 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: React.Rea
 
 function ExpertCaseCard({ caseData }: { caseData: ExpertTicket }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [callDialogOpen, setCallDialogOpen] = useState(false);
+  const [preferredTime, setPreferredTime] = useState('');
+  const [farmerNote, setFarmerNote] = useState('');
   const { data: messages, isLoading: msgsLoading } = useExpertTicketMessages(isExpanded ? caseData.id : null);
+  const { data: existingCallRequest } = useTicketCallRequest(caseData.id);
+  const createCallRequest = useCreateCallRequest();
 
   const status = STATUS_MAP[caseData.status || 'open'] || STATUS_MAP.open;
 
