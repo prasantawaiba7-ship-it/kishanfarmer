@@ -107,6 +107,8 @@ export default function ExpertQuestionsPage() {
                               .filter('data->>case_id', 'eq', ticket.id);
                           }
                         } catch {}
+                        // Refresh notification counts
+                        const { useQueryClient } = await import('@tanstack/react-query');
                         setSelectedTicket(ticket);
                       }}
                     >
