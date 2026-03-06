@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Clock, CheckCircle, ChevronDown, ChevronUp, 
-  User, Bot, Leaf, AlertCircle, MessageSquare, Loader2, Send, Phone, XCircle
+import {
+  Clock, CheckCircle, ChevronDown, ChevronUp,
+  User, Leaf, AlertCircle, MessageSquare, Loader2, Send, Phone
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useMyExpertTickets, useExpertTicketMessages, useSendExpertTicketMessage, type ExpertTicket } from '@/hooks/useExpertTickets';
 import { useCreateCallRequest, useTicketCallRequest } from '@/hooks/useCallRequests';
 import { useAuth } from '@/hooks/useAuth';
-import { useLanguage } from '@/hooks/useLanguage';
 import { formatDistanceToNow } from 'date-fns';
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
