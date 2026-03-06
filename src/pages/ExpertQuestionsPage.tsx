@@ -48,7 +48,7 @@ export default function ExpertQuestionsPage() {
                 </p>
             </div>
             <Card className="overflow-hidden">
-              <ExpertTicketChat ticketId={selectedTicket.id} senderRole="farmer" farmId={selectedTicket.farm_id} farmCropId={selectedTicket.farm_crop_id} technicianId={selectedTicket.technician_id} ticketStatus={selectedTicket.status} />
+              <ExpertTicketChat ticketId={selectedTicket.id} senderRole="farmer" farmId={selectedTicket.farm_id} farmCropId={selectedTicket.farm_crop_id} technicianId={selectedTicket.technician_id} ticketStatus={selectedTicket.status} technicianPhone={selectedTicket.technician?.phone} technicianName={selectedTicket.technician?.name} />
             </Card>
           </main>
           <Footer />
