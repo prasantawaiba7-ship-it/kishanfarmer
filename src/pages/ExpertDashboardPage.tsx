@@ -38,6 +38,23 @@ export default function ExpertDashboardPage() {
   const [selectedTicket, setSelectedTicket] = useState<ExpertTicket | null>(null);
   const [statusFilter, setStatusFilter] = useState('all');
 
+  // Fetch pending call requests for this technician
+  const { data: pendingCallRequests } = useQuery({
+    queryKey: ['pending-call-requests', currentTech?.id],
+    queryFn: async () => {
+      if (!currentTech?.id) return {};
+      const { data } = await (supabase as any)
+        .from('call_requests')
+        .select('ticket_id, status')
+        .eq('technician_id', currentTech.id)
+        .in('status', ['requested', 'accepted']);
+      const map: Record<string, string> = {};
+      (data || []).forEach((r: any) => { map[r.ticket_id] = r.status; });
+      return map;
+    },
+    enabled: !!currentTech?.id,
+  });
+
   if (!user) { navigate('/auth'); return null; }
 
   // Guard: loading state
