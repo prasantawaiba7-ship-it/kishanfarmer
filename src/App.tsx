@@ -35,7 +35,7 @@ import NotFound from "./pages/NotFound";
  import CoursePage from "./pages/CoursePage";
  import LessonPage from "./pages/LessonPage";
  import CertificatePage from "./pages/CertificatePage";
-import MyQuestionsPage from "./pages/MyQuestionsPage";
+
 import { ActionFilmPage } from "./features/action-film";
 import AskExpertPage from "./pages/AskExpertPage";
 import ExpertQuestionsPage from "./pages/ExpertQuestionsPage";
