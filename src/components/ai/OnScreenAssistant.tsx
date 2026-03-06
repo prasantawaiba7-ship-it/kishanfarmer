@@ -59,7 +59,6 @@ const quickQuestions = {
     { icon: CloudSun, text: 'आज के गर्ने?', subtext: "What to do today?", color: 'hsl(var(--warning))' },
     { icon: Leaf, text: 'कुन बाली लगाउने?', subtext: 'Which crop to plant?', color: 'text-primary' },
     { icon: HelpCircle, text: 'मल कति हाल्ने?', subtext: 'Fertilizer advice', color: 'text-secondary' },
-    { icon: Phone, text: 'कृषि विज्ञसँग सोध्ने', subtext: 'Ask a human expert', color: 'text-muted-foreground' },
   ],
   hi: [
     { icon: Camera, text: 'फोटो भेजें', subtext: 'Send crop photo', color: 'text-destructive', isPhotoAction: true },
@@ -67,7 +66,6 @@ const quickQuestions = {
     { icon: CloudSun, text: 'आज क्या करें?', subtext: "What to do today?", color: 'hsl(var(--warning))' },
     { icon: Leaf, text: 'कौन सी फसल लगाएँ?', subtext: 'Which crop?', color: 'text-primary' },
     { icon: HelpCircle, text: 'खाद कितनी डालें?', subtext: 'Fertilizer advice', color: 'text-secondary' },
-    { icon: Phone, text: 'कृषि विशेषज्ञ से पूछें', subtext: 'Ask a human expert', color: 'text-muted-foreground' },
   ],
   en: [
     { icon: Camera, text: 'Send photo', subtext: 'Detect crop disease', color: 'text-destructive', isPhotoAction: true },
@@ -75,7 +73,6 @@ const quickQuestions = {
     { icon: CloudSun, text: "What to do today?", subtext: 'Weather-based advice', color: 'hsl(var(--warning))' },
     { icon: Leaf, text: 'Which crop?', subtext: 'Best crop for my land', color: 'text-primary' },
     { icon: HelpCircle, text: 'Fertilizer help', subtext: 'How much to apply?', color: 'text-secondary' },
-    { icon: Phone, text: 'Ask expert', subtext: 'Talk to Krishi Bigya', color: 'text-muted-foreground' },
   ],
 };
 
