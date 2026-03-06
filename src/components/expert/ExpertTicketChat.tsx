@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, ImagePlus, User, Shield, FileText, Phone, PhoneCall, PhoneOff, PhoneIncoming, Clock, CheckCircle2, XCircle, X, AlertTriangle } from 'lucide-react';
+import { Send, Loader2, ImagePlus, User, Shield, FileText, Phone, PhoneCall, PhoneOff, PhoneIncoming, Clock, CheckCircle2, XCircle, X, AlertTriangle, Mic } from 'lucide-react';
+import { VoiceNoteRecorder } from '@/components/voice/VoiceNoteRecorder';
+import { VoiceNoteBubble } from '@/components/voice/VoiceNoteBubble';
 import { TicketFeedbackCard } from '@/components/feedback/TicketFeedbackCard';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -439,6 +441,7 @@ export function ExpertTicketChat({ ticketId, cropName, senderRole = 'farmer', fa
   const sendMessage = useSendExpertTicketMessage();
   const [newMessage, setNewMessage] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [callDialogOpen, setCallDialogOpen] = useState(false);
   const [preferredTime, setPreferredTime] = useState('');
@@ -471,6 +474,17 @@ export function ExpertTicketChat({ ticketId, cropName, senderRole = 'farmer', fa
       senderType: senderRole,
     });
     setNewMessage('');
+  };
+
+  const handleVoiceNoteSend = (audioUrl: string, durationSeconds: number) => {
+    sendMessage.mutate({
+      ticketId,
+      message: '',
+      senderType: senderRole,
+      audioUrl,
+      audioDurationSeconds: durationSeconds,
+    });
+    setShowVoiceRecorder(false);
   };
 
   const handleImageSend = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -525,6 +539,15 @@ export function ExpertTicketChat({ ticketId, cropName, senderRole = 'farmer', fa
                   </span>
                 </div>
                 {msg.message_text && <p className="text-sm whitespace-pre-wrap">{msg.message_text}</p>}
+                {(msg as any).audio_url && (
+                  <VoiceNoteBubble
+                    audioUrl={(msg as any).audio_url}
+                    durationSeconds={(msg as any).audio_duration_seconds || 0}
+                    transcriptText={(msg as any).transcript_text}
+                    senderLabel={isTechnician ? 'कृषि प्राविधिक' : 'किसान'}
+                    compact
+                  />
+                )}
                 {msg.image_url && (
                   <a href={msg.image_url} target="_blank" rel="noopener noreferrer">
                     <img src={msg.image_url} alt="attachment" className="mt-2 rounded-lg max-h-48 object-cover" />
@@ -698,6 +721,15 @@ export function ExpertTicketChat({ ticketId, cropName, senderRole = 'farmer', fa
               <input type="file" accept="image/*" className="hidden" onChange={handleImageSend} disabled={uploading} />
             </label>
             <Button
+              variant="outline"
+              size="icon"
+              className="w-9 h-9"
+              onClick={() => setShowVoiceRecorder(true)}
+              title="आवाज सन्देश (Voice note)"
+            >
+              <Mic className="w-4 h-4 text-muted-foreground" />
+            </Button>
+            <Button
               size="icon"
               onClick={handleSend}
               disabled={!newMessage.trim() || sendMessage.isPending}
@@ -707,6 +739,14 @@ export function ExpertTicketChat({ ticketId, cropName, senderRole = 'farmer', fa
           </div>
         </div>
       </div>
+
+      {/* Voice Note Recorder */}
+      {showVoiceRecorder && (
+        <VoiceNoteRecorder
+          onSend={handleVoiceNoteSend}
+          onCancel={() => setShowVoiceRecorder(false)}
+        />
+      )}
     </div>
   );
 }

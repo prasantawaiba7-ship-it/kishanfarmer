@@ -371,16 +371,22 @@ export function useSendExpertTicketMessage() {
       message: string;
       senderType?: string;
       imageUrl?: string;
+      audioUrl?: string;
+      audioDurationSeconds?: number;
     }) => {
+      const insertData: any = {
+        ticket_id: data.ticketId,
+        sender_type: data.senderType || 'farmer',
+        sender_id: user!.id,
+        message_text: data.message || null,
+        image_url: data.imageUrl || null,
+        message_type: data.audioUrl ? 'audio' : (data.imageUrl ? 'image' : 'text'),
+        audio_url: data.audioUrl || null,
+        audio_duration_seconds: data.audioDurationSeconds || null,
+      };
       const { error } = await (supabase as any)
         .from('expert_ticket_messages')
-        .insert({
-          ticket_id: data.ticketId,
-          sender_type: data.senderType || 'farmer',
-          sender_id: user!.id,
-          message_text: data.message || null,
-          image_url: data.imageUrl || null,
-        });
+        .insert(insertData);
       if (error) throw error;
 
       // Only set unread flag if it's currently false to avoid duplicate realtime triggers
