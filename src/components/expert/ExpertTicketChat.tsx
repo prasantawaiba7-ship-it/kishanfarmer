@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, ImagePlus, User, Shield, FileText, Phone, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { Send, Loader2, ImagePlus, User, Shield, FileText, Phone, Clock, CheckCircle2, XCircle, X } from 'lucide-react';
 import { TicketFeedbackCard } from '@/components/feedback/TicketFeedbackCard';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,6 +12,8 @@ import { ExpertTemplate } from '@/hooks/useExpertTemplates';
 import { FarmContextLine } from '@/components/farm/FarmContextLine';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 interface ExpertTicketChatProps {
   ticketId: string;
@@ -164,46 +166,16 @@ export function ExpertTicketChat({ ticketId, cropName, senderRole = 'farmer', fa
         </div>
       )}
 
-      {/* Call request section for technician */}
-      {senderRole === 'technician' && existingCallRequest && existingCallRequest.status !== 'completed' && existingCallRequest.status !== 'missed' && (
+      {/* Call request section for technician — redesigned accept/decline */}
+      {senderRole === 'technician' && existingCallRequest && !['completed', 'missed'].includes(existingCallRequest.status) && (
+        <TechnicianCallRequestPanel callRequest={existingCallRequest} updateCallStatus={updateCallStatus} />
+      )}
+      {senderRole === 'technician' && existingCallRequest?.status === 'declined' && (
         <div className="px-4 pb-2">
-          <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-3 space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <Phone className="w-4 h-4 text-primary" />
-              📞 किसानले Call अनुरोध गरेको छ
-            </div>
-            {existingCallRequest.preferred_time && (
-              <p className="text-xs text-muted-foreground">
-                <Clock className="w-3 h-3 inline mr-1" />
-                समय: {existingCallRequest.preferred_time === 'morning' ? 'बिहान (8–11 AM)' : existingCallRequest.preferred_time === 'afternoon' ? 'दिउँसो (12–3 PM)' : existingCallRequest.preferred_time === 'evening' ? 'बेलुका (4–6 PM)' : 'जुनसुकै बेला'}
-              </p>
-            )}
-            {existingCallRequest.farmer_note && (
-              <p className="text-xs text-muted-foreground">नोट: {existingCallRequest.farmer_note}</p>
-            )}
-            <div className="flex gap-2">
-              {existingCallRequest.status === 'requested' && (
-                <Button
-                  size="sm"
-                  className="flex-1 text-xs"
-                  disabled={updateCallStatus.isPending}
-                  onClick={() => updateCallStatus.mutate({ requestId: existingCallRequest.id, status: 'accepted' })}
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> स्वीकार गर्नुहोस्
-                </Button>
-              )}
-              {(existingCallRequest.status === 'requested' || existingCallRequest.status === 'accepted') && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="text-xs"
-                  disabled={updateCallStatus.isPending}
-                  onClick={() => updateCallStatus.mutate({ requestId: existingCallRequest.id, status: 'completed' })}
-                >
-                  Call सकियो
-                </Button>
-              )}
-            </div>
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-2.5 text-xs text-muted-foreground">
+            <XCircle className="w-3.5 h-3.5 inline mr-1 text-destructive" />
+            Call अस्वीकार गरिएको छ
+            {existingCallRequest.decline_reason && <span> — {DECLINE_REASONS[existingCallRequest.decline_reason] || existingCallRequest.decline_reason}</span>}
           </div>
         </div>
       )}
