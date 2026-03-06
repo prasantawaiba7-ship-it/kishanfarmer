@@ -252,6 +252,8 @@ export type Database = {
       }
       ai_chat_history: {
         Row: {
+          audio_duration_seconds: number | null
+          audio_url: string | null
           content: string
           created_at: string
           farmer_id: string
@@ -263,6 +265,8 @@ export type Database = {
           session_id: string
         }
         Insert: {
+          audio_duration_seconds?: number | null
+          audio_url?: string | null
           content: string
           created_at?: string
           farmer_id: string
@@ -274,6 +278,8 @@ export type Database = {
           session_id: string
         }
         Update: {
+          audio_duration_seconds?: number | null
+          audio_url?: string | null
           content?: string
           created_at?: string
           farmer_id?: string
@@ -2018,31 +2024,43 @@ export type Database = {
       }
       expert_ticket_messages: {
         Row: {
+          audio_duration_seconds: number | null
+          audio_url: string | null
           created_at: string
           id: string
           image_url: string | null
           message_text: string | null
+          message_type: string
           sender_id: string | null
           sender_type: string
           ticket_id: string
+          transcript_text: string | null
         }
         Insert: {
+          audio_duration_seconds?: number | null
+          audio_url?: string | null
           created_at?: string
           id?: string
           image_url?: string | null
           message_text?: string | null
+          message_type?: string
           sender_id?: string | null
           sender_type?: string
           ticket_id: string
+          transcript_text?: string | null
         }
         Update: {
+          audio_duration_seconds?: number | null
+          audio_url?: string | null
           created_at?: string
           id?: string
           image_url?: string | null
           message_text?: string | null
+          message_type?: string
           sender_id?: string | null
           sender_type?: string
           ticket_id?: string
+          transcript_text?: string | null
         }
         Relationships: [
           {
