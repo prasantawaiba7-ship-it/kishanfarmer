@@ -39,7 +39,7 @@ const SCHEDULE_OPTIONS = [
   { value: 'custom', label: 'आफ्नो समय लेख्ने...' },
 ];
 
-function TechnicianCallRequestPanel({ callRequest, updateCallStatus, farmerPhone }: { callRequest: CallRequest; updateCallStatus: ReturnType<typeof useUpdateCallRequestStatus>; farmerPhone?: string | null }) {
+function TechnicianCallRequestPanel({ callRequest, updateCallStatus, farmerPhone }: { callRequest: CallRequest; updateCallStatus: ReturnType<typeof useUpdateCallRequestStatus>; farmerPhone?: string | null; }) {
   const [acceptDialogOpen, setAcceptDialogOpen] = useState(false);
   const [declineDialogOpen, setDeclineDialogOpen] = useState(false);
   const [scheduleOption, setScheduleOption] = useState('now');
@@ -70,17 +70,14 @@ function TechnicianCallRequestPanel({ callRequest, updateCallStatus, farmerPhone
   };
 
   const handleStartCall = () => {
-    // Mark as in_progress then open phone dialer
+    // Open phone dialer first, then mark as in_progress
+    if (farmerPhone) {
+      window.open(`tel:${farmerPhone}`, '_self');
+    }
     updateCallStatus.mutate({
       requestId: callRequest.id,
       status: 'in_progress',
       ticketId: callRequest.ticket_id,
-    }, {
-      onSuccess: () => {
-        if (farmerPhone) {
-          window.open(`tel:${farmerPhone}`, '_self');
-        }
-      }
     });
   };
 
@@ -109,10 +106,10 @@ function TechnicianCallRequestPanel({ callRequest, updateCallStatus, farmerPhone
           {callRequest.status === 'in_progress' && '📞 Call हुँदैछ...'}
         </div>
 
-        {/* Farmer phone display for expert */}
-        {farmerPhone && callRequest.status !== 'requested' && (
+        {/* Farmer phone display for expert — always show when available */}
+        {farmerPhone && (
           <p className="text-xs text-muted-foreground pl-6">
-            📱 किसानको नम्बर: <span className="font-mono font-medium text-foreground">{farmerPhone}</span>
+            📱 किसानको नम्बर: <a href={`tel:${farmerPhone}`} className="font-mono font-medium text-primary underline">{farmerPhone}</a>
           </p>
         )}
 
@@ -147,22 +144,26 @@ function TechnicianCallRequestPanel({ callRequest, updateCallStatus, farmerPhone
                 {callRequest.scheduled_window}
               </p>
             )}
-            <Button
-              size="sm"
-              className="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold"
-              disabled={updateCallStatus.isPending}
-              onClick={handleStartCall}
-            >
-              {updateCallStatus.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <PhoneCall className="w-4 h-4 mr-1.5" />}
-              📞 Call सुरु गर्नुहोस् (Call now)
-            </Button>
+            {farmerPhone ? (
+              <Button
+                size="sm"
+                className="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold"
+                disabled={updateCallStatus.isPending}
+                onClick={handleStartCall}
+              >
+                {updateCallStatus.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <PhoneCall className="w-4 h-4 mr-1.5" />}
+                📞 Call सुरु गर्नुहोस् ({farmerPhone})
+              </Button>
+            ) : (
+              <p className="text-xs text-destructive pl-6">⚠️ किसानको फोन नम्बर उपलब्ध छैन।</p>
+            )}
             <p className="text-[10px] text-muted-foreground text-center">
               ⚠️ Call गर्नु अघि किसानको पहिचान पुष्टि गर्नुहोस्
             </p>
           </div>
         )}
 
-        {/* --- STATE: in_progress — Call ongoing --- */}
+        {/* --- STATE: in_progress — Call ongoing, show "Call सकियो" --- */}
         {callRequest.status === 'in_progress' && (
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 font-medium pl-6 animate-pulse">
@@ -296,15 +297,9 @@ function TechnicianCallRequestPanel({ callRequest, updateCallStatus, farmerPhone
 function FarmerCallStatusPanel({ callRequest, technicianPhone, technicianName }: { callRequest: CallRequest; technicianPhone?: string | null; technicianName?: string }) {
   const status = callRequest.status;
 
+  // Don't show completed panel on farmer side — chat message already shows it
   if (status === 'completed') {
-    return (
-      <div className="px-4 pb-2">
-        <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
-          <span>✅ Call सम्पन्न भयो।</span>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -596,15 +591,7 @@ export function ExpertTicketChat({ ticketId, cropName, senderRole = 'farmer', fa
       {senderRole === 'technician' && existingCallRequest && !['completed', 'missed'].includes(existingCallRequest.status) && existingCallRequest.status !== 'declined' && (
         <TechnicianCallRequestPanel callRequest={existingCallRequest} updateCallStatus={updateCallStatus} farmerPhone={farmerPhone} />
       )}
-      {senderRole === 'technician' && existingCallRequest?.status === 'completed' && (
-        <div className="px-4 pb-2">
-          <div className="rounded-lg border border-border bg-muted/30 p-2.5 text-xs text-muted-foreground flex items-center gap-2">
-            <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
-            Call सम्पन्न भयो
-            {existingCallRequest.technician_note && <span> — {existingCallRequest.technician_note}</span>}
-          </div>
-        </div>
-      )}
+      {/* "Call सम्पन्न" is already shown as a chat message, no need for extra panel */}
       {senderRole === 'technician' && existingCallRequest?.status === 'declined' && (
         <div className="px-4 pb-2">
           <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-2.5 text-xs text-muted-foreground">
