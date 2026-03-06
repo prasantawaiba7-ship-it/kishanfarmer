@@ -1187,47 +1187,36 @@ export function OnScreenAssistant({ isFullScreen: isEmbeddedFullScreen = false, 
               {/* Selected image preview */}
               {selectedImage && (
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative inline-block">
-                  <img src={selectedImage} alt="Selected" className="max-h-20 rounded-xl border-2 border-primary/30 shadow-sm" />
-                  <button onClick={removeSelectedImage} className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md">
+                  <img src={selectedImage} alt="Selected" className="max-h-16 rounded-lg border-2 border-primary/30 shadow-sm" />
+                  <button onClick={removeSelectedImage} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md">
                     <X className="w-3 h-3" />
                   </button>
                 </motion.div>
               )}
 
-              {/* Input row - modern floating bar */}
-              <div className="flex items-center gap-2 bg-muted/40 border border-border/60 rounded-2xl px-2 py-1.5 transition-all focus-within:border-primary/40 focus-within:bg-background" style={{ boxShadow: '0 2px 12px hsl(221 39% 11% / 0.04)' }}>
+              {/* Input row */}
+              <div className="flex items-center gap-1.5 bg-muted/40 border border-border/60 rounded-xl px-1.5 py-1 transition-all focus-within:border-primary/40 focus-within:bg-background" style={{ boxShadow: '0 1px 6px hsl(221 39% 11% / 0.03)' }}>
                 <input ref={imageInputRef} type="file" accept="image/*" capture="environment" onChange={handleImageSelect} className="hidden" />
                 
-                {/* Gallery button */}
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => imageInputRef.current?.click()} 
-                  disabled={isLoading || !!selectedImage}
-                  className="shrink-0 h-10 w-10 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 touch-manipulation"
+                <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isLoading || !!selectedImage}
+                  className="shrink-0 h-9 w-9 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 touch-manipulation"
                   title={language === 'ne' ? 'बाली फोटो अपलोड' : 'Upload crop photo'}
                 >
-                  <ImagePlus className="w-[22px] h-[22px]" />
+                  <ImagePlus className="w-[20px] h-[20px]" />
                 </Button>
 
-                {/* Mic button */}
-                <Button
-                  variant={isListening ? "destructive" : "ghost"}
-                  size="icon"
-                  onClick={toggleListening}
-                  disabled={isLoading}
-                  className={cn("shrink-0 h-10 w-10 rounded-xl touch-manipulation", !isListening && "text-muted-foreground hover:text-primary hover:bg-primary/10")}
+                <Button variant={isListening ? "destructive" : "ghost"} size="icon" onClick={toggleListening} disabled={isLoading}
+                  className={cn("shrink-0 h-9 w-9 rounded-lg touch-manipulation", !isListening && "text-muted-foreground hover:text-primary hover:bg-primary/10")}
                 >
                   {isListening ? (
                     <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 0.5 }}>
-                      <MicOff className="w-[22px] h-[22px]" />
+                      <MicOff className="w-[20px] h-[20px]" />
                     </motion.div>
                   ) : (
-                    <Mic className="w-[22px] h-[22px]" />
+                    <Mic className="w-[20px] h-[20px]" />
                   )}
                 </Button>
 
-                {/* Text input */}
                 <Input
                   ref={inputRefToUse as RefObject<HTMLInputElement>}
                   value={inputText}
@@ -1236,46 +1225,36 @@ export function OnScreenAssistant({ isFullScreen: isEmbeddedFullScreen = false, 
                     isListening 
                       ? (language === 'ne' ? '🎤 सुन्दैछ...' : '🎤 Listening...')
                       : selectedImage
-                        ? (language === 'ne' ? 'फोटोको बारेमा सोध्नुहोस्...' : 'Ask about the photo...')
-                        : (language === 'ne' ? 'तपाईंको प्रश्न लेख्नुहोस्...' : 'Type your question...')
+                        ? (language === 'ne' ? 'फोटोको बारेमा...' : 'About photo...')
+                        : (language === 'ne' ? 'प्रश्न लेख्नुहोस्...' : 'Type your question...')
                   }
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                   disabled={isLoading || isListening}
-                  className="flex-1 h-10 text-[16px] border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 px-1"
+                  className="flex-1 h-9 text-[14px] border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 px-1"
                 />
 
-                {/* Send button */}
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button
-                    onClick={() => handleSendMessage()}
-                    disabled={(!inputText.trim() && !selectedImage) || isLoading}
-                    size="icon"
-                    className="shrink-0 h-10 w-10 rounded-xl touch-manipulation"
-                    style={{ boxShadow: '0 2px 8px hsl(150 67% 38% / 0.2)' }}
-                  >
-                    <Send className="w-[22px] h-[22px]" />
-                  </Button>
-                </motion.div>
+                <Button onClick={() => handleSendMessage()} disabled={(!inputText.trim() && !selectedImage) || isLoading} size="icon"
+                  className="shrink-0 h-9 w-9 rounded-lg touch-manipulation"
+                >
+                  <Send className="w-[20px] h-[20px]" />
+                </Button>
               </div>
 
               {/* Listening indicator */}
               {isListening && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-center gap-2 py-2 px-4 rounded-full bg-destructive/10 border border-destructive/20 mx-auto w-fit">
-                  <motion.div animate={{ scale: [1, 1.4, 1] }} transition={{ repeat: Infinity, duration: 0.6 }} className="w-2.5 h-2.5 rounded-full bg-destructive" />
-                  <span className="text-sm text-destructive font-medium">
-                    {language === 'ne' ? 'सुन्दैछु... बोल्नुहोस्' : language === 'hi' ? 'सुन रहा हूँ...' : 'Listening... speak now'}
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-center gap-2 py-1.5 px-3 rounded-full bg-destructive/10 border border-destructive/20 mx-auto w-fit">
+                  <motion.div animate={{ scale: [1, 1.4, 1] }} transition={{ repeat: Infinity, duration: 0.6 }} className="w-2 h-2 rounded-full bg-destructive" />
+                  <span className="text-[12px] text-destructive font-medium">
+                    {language === 'ne' ? 'सुन्दैछु...' : 'Listening...'}
                   </span>
                 </motion.div>
               )}
 
               {/* Subscription CTA */}
               {!subscribed && !subLoading && (
-                <button
-                  onClick={() => setShowSubscriptionModal(true)}
-                  className="w-full flex items-center justify-center gap-1.5 text-xs text-accent hover:text-accent/80 py-2 transition-colors touch-manipulation"
-                >
-                  <Crown className="w-3.5 h-3.5" />
-                  {language === 'ne' ? 'असीमित सल्लाहका लागि सदस्यता लिनुहोस्' : 'Subscribe for unlimited farming advice'}
+                <button onClick={() => setShowSubscriptionModal(true)} className="w-full flex items-center justify-center gap-1 text-[11px] text-accent hover:text-accent/80 py-1.5 transition-colors touch-manipulation">
+                  <Crown className="w-3 h-3" />
+                  {language === 'ne' ? 'असीमित सल्लाहका लागि सदस्यता' : 'Subscribe for unlimited advice'}
                 </button>
               )}
             </div>
