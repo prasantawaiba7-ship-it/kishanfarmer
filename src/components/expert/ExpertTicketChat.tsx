@@ -51,6 +51,7 @@ function TechnicianCallRequestPanel({ callRequest, updateCallStatus }: { callReq
       requestId: callRequest.id,
       status: 'accepted',
       scheduledWindow: window,
+      ticketId: callRequest.ticket_id,
     }, { onSuccess: () => setAcceptDialogOpen(false) });
   };
 
@@ -60,6 +61,7 @@ function TechnicianCallRequestPanel({ callRequest, updateCallStatus }: { callReq
       status: 'declined',
       declineReason,
       declineNote: declineNote.trim() || undefined,
+      ticketId: callRequest.ticket_id,
     }, { onSuccess: () => setDeclineDialogOpen(false) });
   };
 
