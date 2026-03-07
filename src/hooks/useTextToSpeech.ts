@@ -518,7 +518,7 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}) {
         speakWithBrowser(textToSpeak, messageId, true);
       }
     },
-    [stop, speakWithBrowser, onStart, onEnd, onError]
+    [stop, speakWithBrowser, language, onStart, onEnd, onError]
   );
 
   const toggle = useCallback(
