@@ -237,8 +237,10 @@ function incrementOfflineTTSCount(): number {
   return count;
 }
 
-// Circuit-breaker: once ElevenLabs fails, skip it for the rest of the session
+// Circuit-breaker: skip ElevenLabs temporarily after failure
 let elevenLabsDisabled = false;
+let elevenLabsDisabledAt = 0;
+const CIRCUIT_BREAKER_RESET_MS = 60_000; // retry after 60s
 
 export function useTextToSpeech(options: UseTextToSpeechOptions = {}) {
   // Default to faster rate (1.15) for quicker voice responses
@@ -338,15 +340,26 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}) {
         utterance.rate = rate;
         utterance.pitch = pitch;
 
-        // Get voices - wait a bit if not loaded yet
+        // Get voices
         let voices = voicesRef.current.length > 0 ? voicesRef.current : window.speechSynthesis.getVoices();
         
-        // Chrome sometimes needs a moment to load voices
         if (voices.length === 0) {
           console.log('[Browser TTS] Voices not loaded, using default');
         }
         
-        const preferred = findBestVoice(voices, speechLang);
+        const textIsDevanagari = containsDevanagari(cleanedText);
+        const { voice: preferred, unsupportedLanguage } = findBestVoice(voices, speechLang, textIsDevanagari);
+
+        // If text is Nepali/Devanagari but no suitable voice exists, don't play garbage audio
+        if (unsupportedLanguage) {
+          console.warn('[Browser TTS] No Nepali/Hindi voice available — skipping broken playback');
+          setIsLoading(false);
+          setIsSpeaking(false);
+          setCurrentMessageId(null);
+          onError?.("nepali_voice_unavailable");
+          return;
+        }
+
         if (preferred) {
           utterance.voice = preferred;
           console.log('[Browser TTS] Using voice:', preferred.name, preferred.lang);
@@ -416,8 +429,17 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}) {
       setIsLoading(true);
       setCurrentMessageId(messageId || null);
 
-      // Circuit-breaker: skip ElevenLabs if it already failed this session
-      if (elevenLabsDisabled) {
+      // Circuit-breaker: skip ElevenLabs if it recently failed (resets after 60s)
+      if (elevenLabsDisabled && (Date.now() - elevenLabsDisabledAt < CIRCUIT_BREAKER_RESET_MS)) {
+        console.log('[TTS] ElevenLabs circuit breaker active, using browser TTS');
+        speakWithBrowser(textToSpeak, messageId);
+        return;
+      }
+      // Reset circuit breaker if enough time passed
+      if (elevenLabsDisabled && (Date.now() - elevenLabsDisabledAt >= CIRCUIT_BREAKER_RESET_MS)) {
+        elevenLabsDisabled = false;
+        console.log('[TTS] ElevenLabs circuit breaker reset, retrying');
+      }
         speakWithBrowser(textToSpeak, messageId);
         return;
       }
