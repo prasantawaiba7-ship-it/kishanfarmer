@@ -84,6 +84,13 @@ export function AIAssistant({ initialAction = null }: AIAssistantProps) {
   } = useTextToSpeech({
     language,
     onError: (error) => {
+      if (error === "nepali_voice_unavailable") {
+        toast({
+          title: "नेपाली आवाज उपलब्ध छैन",
+          description: "यो यन्त्रमा नेपाली TTS समर्थित छैन। कृपया टेक्स्ट पढ्नुहोस्।",
+        });
+        return;
+      }
       toast({
         title: "Speech Error",
         description: error,
