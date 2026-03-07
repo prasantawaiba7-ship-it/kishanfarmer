@@ -467,7 +467,8 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}) {
         if (!response.ok || isJson) {
           // Trip the circuit-breaker
           elevenLabsDisabled = true;
-          console.warn("ElevenLabs circuit-breaker tripped. Using browser TTS for this session.");
+          elevenLabsDisabledAt = Date.now();
+          console.warn("ElevenLabs circuit-breaker tripped. Will retry after 60s.");
 
           if (isJson) {
             try {
