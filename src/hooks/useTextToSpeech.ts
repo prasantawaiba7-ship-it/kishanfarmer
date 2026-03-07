@@ -148,39 +148,68 @@ function isFemaleVoice(voice: SpeechSynthesisVoice): boolean {
   return false;
 }
 
-function findBestVoice(voices: SpeechSynthesisVoice[], targetLang: string): SpeechSynthesisVoice | null {
-  if (voices.length === 0) return null;
+/**
+ * Check if a voice can handle Devanagari/Nepali text.
+ * Returns true for ne-NP, hi-IN, or any Indic voice.
+ */
+function canHandleDevanagari(voice: SpeechSynthesisVoice): boolean {
+  const lang = voice.lang.toLowerCase();
+  const name = voice.name.toLowerCase();
+  return (
+    lang.startsWith("ne") ||
+    lang.startsWith("hi") ||
+    lang.includes("-in") ||
+    name.includes("nepali") ||
+    name.includes("hindi") ||
+    name.includes("devanagari")
+  );
+}
+
+interface VoiceSearchResult {
+  voice: SpeechSynthesisVoice | null;
+  /** true when Nepali/Hindi text was requested but no suitable voice exists */
+  unsupportedLanguage: boolean;
+}
+
+function findBestVoice(voices: SpeechSynthesisVoice[], targetLang: string, textIsDevanagari: boolean): VoiceSearchResult {
+  if (voices.length === 0) return { voice: null, unsupportedLanguage: false };
 
   const langCode = targetLang.split("-")[0];
+  const needsDevanagari = langCode === "ne" || langCode === "hi" || textIsDevanagari;
   const femaleVoices = voices.filter(isFemaleVoice);
   const pool = femaleVoices.length > 0 ? femaleVoices : voices;
 
   // 1) Nepali
   let v = pool.find((x) => x.lang.toLowerCase().includes("ne") || x.name.toLowerCase().includes("nepali"));
-  if (v) return v;
+  if (v) return { voice: v, unsupportedLanguage: false };
 
   // 2) Hindi when not English
   v = pool.find((x) => x.lang.startsWith("hi") || x.name.toLowerCase().includes("hindi"));
-  if (v && langCode !== "en") return v;
+  if (v && langCode !== "en") return { voice: v, unsupportedLanguage: false };
 
   // 3) Any IN when not English
   v = pool.find((x) => x.lang.includes("IN"));
-  if (v && langCode !== "en") return v;
+  if (v && langCode !== "en") return { voice: v, unsupportedLanguage: false };
+
+  // If we need Devanagari but couldn't find any suitable voice, signal unsupported
+  if (needsDevanagari) {
+    return { voice: null, unsupportedLanguage: true };
+  }
 
   // 4) language match
   v = pool.find((x) => x.lang.startsWith(langCode));
-  if (v) return v;
+  if (v) return { voice: v, unsupportedLanguage: false };
 
   // 5) female English
   v = femaleVoices.find((x) => x.lang.startsWith("en"));
-  if (v) return v;
+  if (v) return { voice: v, unsupportedLanguage: false };
 
   // 6) google
   v = voices.find((x) => x.name.toLowerCase().includes("google"));
-  if (v) return v;
+  if (v) return { voice: v, unsupportedLanguage: false };
 
   // 7) default
-  return voices.find((x) => x.default) || voices[0] || null;
+  return { voice: voices.find((x) => x.default) || voices[0] || null, unsupportedLanguage: false };
 }
 
 function getElevenLabsFunctionUrl(): string {
@@ -208,8 +237,10 @@ function incrementOfflineTTSCount(): number {
   return count;
 }
 
-// Circuit-breaker: once ElevenLabs fails, skip it for the rest of the session
+// Circuit-breaker: skip ElevenLabs temporarily after failure
 let elevenLabsDisabled = false;
+let elevenLabsDisabledAt = 0;
+const CIRCUIT_BREAKER_RESET_MS = 60_000; // retry after 60s
 
 export function useTextToSpeech(options: UseTextToSpeechOptions = {}) {
   // Default to faster rate (1.15) for quicker voice responses
@@ -309,15 +340,26 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}) {
         utterance.rate = rate;
         utterance.pitch = pitch;
 
-        // Get voices - wait a bit if not loaded yet
+        // Get voices
         let voices = voicesRef.current.length > 0 ? voicesRef.current : window.speechSynthesis.getVoices();
         
-        // Chrome sometimes needs a moment to load voices
         if (voices.length === 0) {
           console.log('[Browser TTS] Voices not loaded, using default');
         }
         
-        const preferred = findBestVoice(voices, speechLang);
+        const textIsDevanagari = containsDevanagari(cleanedText);
+        const { voice: preferred, unsupportedLanguage } = findBestVoice(voices, speechLang, textIsDevanagari);
+
+        // If text is Nepali/Devanagari but no suitable voice exists, don't play garbage audio
+        if (unsupportedLanguage) {
+          console.warn('[Browser TTS] No Nepali/Hindi voice available — skipping broken playback');
+          setIsLoading(false);
+          setIsSpeaking(false);
+          setCurrentMessageId(null);
+          onError?.("nepali_voice_unavailable");
+          return;
+        }
+
         if (preferred) {
           utterance.voice = preferred;
           console.log('[Browser TTS] Using voice:', preferred.name, preferred.lang);
@@ -387,10 +429,16 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}) {
       setIsLoading(true);
       setCurrentMessageId(messageId || null);
 
-      // Circuit-breaker: skip ElevenLabs if it already failed this session
-      if (elevenLabsDisabled) {
+      // Circuit-breaker: skip ElevenLabs if it recently failed (resets after 60s)
+      if (elevenLabsDisabled && (Date.now() - elevenLabsDisabledAt < CIRCUIT_BREAKER_RESET_MS)) {
+        console.log('[TTS] ElevenLabs circuit breaker active, using browser TTS');
         speakWithBrowser(textToSpeak, messageId);
         return;
+      }
+      // Reset circuit breaker if enough time passed
+      if (elevenLabsDisabled && (Date.now() - elevenLabsDisabledAt >= CIRCUIT_BREAKER_RESET_MS)) {
+        elevenLabsDisabled = false;
+        console.log('[TTS] ElevenLabs circuit breaker reset, retrying');
       }
 
       abortControllerRef.current = new AbortController();
@@ -419,7 +467,8 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}) {
         if (!response.ok || isJson) {
           // Trip the circuit-breaker
           elevenLabsDisabled = true;
-          console.warn("ElevenLabs circuit-breaker tripped. Using browser TTS for this session.");
+          elevenLabsDisabledAt = Date.now();
+          console.warn("ElevenLabs circuit-breaker tripped. Will retry after 60s.");
 
           if (isJson) {
             try {
@@ -469,7 +518,7 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}) {
         speakWithBrowser(textToSpeak, messageId, true);
       }
     },
-    [stop, speakWithBrowser, onStart, onEnd, onError]
+    [stop, speakWithBrowser, language, onStart, onEnd, onError]
   );
 
   const toggle = useCallback(
